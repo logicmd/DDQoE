@@ -16,24 +16,23 @@ class Processor:
             'UA': parsed.UA
         }
         self.stats = {
-            'iPhone': 0
-            'iPad': 0
-            'UA': 0
-            'ATV': 0
+
         }
 
     def reduce(self):
         for ua in self.metric['UA']:
             if 'iPhone' in ua:
-                self.stats['iPhone'] += 1;
-            if 'iPad' in ua:
-                self.stats['iPad'] += 1;
-            if 'Mac OS' in ua:
-                self.stats['Mac'] += 1;
-            if 'TV' in ua:
-                self.stats['ATV'] += 1;
-
-
+                self.stats['iPhone'] = self.stats.get('iPhone', 0) + 1;
+            elif 'iPad' in ua:
+                self.stats['iPad'] = self.stats.get('iPad', 0) + 1;
+            elif 'Apple TV' in ua:
+                self.stats['Apple TV'] = self.stats.get('Apple TV', 0) + 1;
+            elif 'Android' in ua:
+                self.stats['Android'] = self.stats.get('Android', 0) + 1;
+            elif 'Mac' in ua:
+                self.stats['Mac'] = self.stats.get('Mac', 0) + 1;
+            elif 'Linux' in ua:
+                self.stats['Linux'] = self.stats.get('Linux', 0) + 1;
 
 
 if __name__ == '__main__':
