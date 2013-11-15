@@ -57,10 +57,10 @@ class LogParser:
 
         self.IP.append(matched[0][0]);
         self.datetime.append(matched[0][1]);
-        self.datetime.append(matched[0][4]);
+        self.request.append(matched[0][2]);
         self.UA.append(matched[0][6]);
 
-        areq = Request(matched[0][0], matched[0][1], matched[0][4], matched[0][6])
+        #areq = Request(matched[0][0], matched[0][1], matched[0][4], matched[0][6])
         #print areq
 
 
@@ -74,6 +74,6 @@ class LogParser:
 
 if __name__ == '__main__':
 
-    p=Parser('log/prod-freewheel.espn.go.com-head.log')
+    p=LogParser('log/prod-freewheel.espn.go.com-head.log')
     p.proceed()
 
