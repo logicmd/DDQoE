@@ -4,8 +4,16 @@
 from log_parser import LogParser
 '''
     cn : callback name就代表广告播放的进度
-    n : network 代表网络，例如来自ESPN network
+    n : network 代表网络，reseller network id(s), content right owner network id
     adid : ad id
+
+    progress
+    slotImpression:slotEnd
+    defaultImpression:firstQuartile:midPoint:thirdQuartile:complete:adEnd
+    _e_renderer-load、_e_unknown
+
+
+
 '''
 
 class Processor:
@@ -19,6 +27,8 @@ class Processor:
         self.stats = {
 
         }
+
+        self.m3u8 = []
 
         progress = {
             # 'complete': ,
@@ -73,6 +83,15 @@ class Processor:
                 prog = raw_progress;
                 progress[prog] = progress.get(prog, 0) + 1;
 
+            raw_m3u8_url = self.get_quartile(req, '_fw_lpu');
+
+            if raw_m3u8_url:
+                print raw_m3u8_url
+                break
+                m3u8_url = raw_m3u8_url.replace('%3A',':');
+                self.m3u8.append(m3u8_url)
+
+
 
 
 
@@ -98,5 +117,5 @@ if __name__ == '__main__':
     for metric in proc.stats:
         print metric+ ': '
         print proc.stats[metric]
-
+    #print proc.m3u8
 
