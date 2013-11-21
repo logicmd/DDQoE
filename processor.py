@@ -119,6 +119,7 @@ class Processor:
 
             else:
                 self.quality['unknown'] = self.quality.get('unknown', 0) + 1
+                print 'fuck'
 
 
     # def get_progress(self, text):
@@ -133,19 +134,31 @@ class Processor:
             else:
                 return text[st_ind+len(tagname)+2:]
 
+
+def print_sort(dic, k='k', assending=True):
+    if isinstance(dic, dict):
+        i = {'k':0, 'v':1}
+        l = sorted(dic.iteritems(), key=lambda d:d[i[k]], reverse = assending)
+        print '{'
+        for ele in l:
+            print '\t' + str(ele[0]) + ': ' + str(ele[1])
+        print '}'
+    else:
+        print dic
+
 if __name__ == '__main__':
     p = LogParser('log/prod-freewheel.espn.go.com.log')
     p.proceed()
     proc = Processor(p)
     proc.reduce()
-    print 'Number of ads types is' + str(len(proc.stats['Ad']))
+    print 'Number of ads types is ' + str(len(proc.stats['Ad']))
     for metric in proc.stats:
         print metric+ ': '
-        print proc.stats[metric]
+        print_sort(proc.stats[metric], 'v')
     proc.get_quality()
     for metric in proc.quality:
         print metric+ ': '
-        print proc.quality[metric]
+        print_sort(proc.quality[metric], 'k', False)
 
     #for url in proc.m3u8:
     #    print url
