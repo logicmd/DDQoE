@@ -36,6 +36,10 @@ class Processor:
             # 'slotEnd': ,
         }
 
+        self.quality = {
+
+        }
+
     def reduce(self):
         self.stats['Platform'] = {}
         platform = self.stats['Platform']
@@ -84,16 +88,37 @@ class Processor:
                 progress[prog] = progress.get(prog, 0) + 1;
 
             raw_m3u8_url = self.get_quartile(req, '_fw_lpu');
-
             if raw_m3u8_url:
-                print raw_m3u8_url
-                break
                 m3u8_url = raw_m3u8_url.replace('%3A',':');
                 self.m3u8.append(m3u8_url)
 
 
+    def get_quality(self):
+        self.quality['ad'] = {}
+        self.quality['content'] = {}
 
+        for url in self.m3u8:
+            if 'ads' in url:
+                if 'master' in url:
+                    self.quality['master'] = self.quality.get('master', 0) + 1
+                elif 'slide' in url:
+                    st_ind = url[::-1].find('/')
+                    en_ind = url[len(url)-st_ind:].find('_')
+                    if st_ind>-1 and en_ind>-1:
+                        bitrate = int(url[len(url)-st_ind:len(url)-st_ind+en_ind])
+                        self.quality['ad'][bitrate] = self.quality['ad'].get(bitrate, 0) + 1
+            elif 'p-' in url:
+                st_ind = url[::-1].find('p-')
+                en_ind = url[len(url)-st_ind:].find('.m3u8')
+                if st_ind>-1 and en_ind>-1:
+                    raw_str = url[len(url)-st_ind+1:len(url)-st_ind+en_ind]
+                    if '_audio' in raw_str:
+                        raw_str = raw_str.replace('_audio','')
+                    bitrate = int(raw_str)
+                    self.quality['content'][bitrate] = self.quality['ad'].get(bitrate, 0) + 1
 
+            else:
+                self.quality['unknown'] = self.quality.get('unknown', 0) + 1
 
 
     # def get_progress(self, text):
@@ -106,16 +131,23 @@ class Processor:
             if en_ind>-1:
                 return text[st_ind+len(tagname)+2:st_ind+len(tagname)+en_ind]
             else:
-                return text[st_ind+6:]
+                return text[st_ind+len(tagname)+2:]
 
 if __name__ == '__main__':
     p = LogParser('log/prod-freewheel.espn.go.com.log')
     p.proceed()
     proc = Processor(p)
     proc.reduce()
-    print len(proc.stats['Ad'])
+    print 'Number of ads types is' + str(len(proc.stats['Ad']))
     for metric in proc.stats:
         print metric+ ': '
         print proc.stats[metric]
-    #print proc.m3u8
+    proc.get_quality()
+    for metric in proc.quality:
+        print metric+ ': '
+        print proc.quality[metric]
+
+    #for url in proc.m3u8:
+    #    print url
+
 
