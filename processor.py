@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import re
+import re, cPickle, os
 from log_parser import LogParser
+
 '''
     cn : callback name就代表广告播放的进度
     n : network 代表网络，reseller network id(s), content right owner network id
@@ -21,8 +22,12 @@ class Processor:
         self.metric = {
             #'IP': parsed.IP,
             #'datetime': parsed.datetime,
-            'UA': parsed.UA,
-            'request': parsed.request
+            'UA'        : parsed.UA,
+            'request'   : parsed.request,
+            'platform'  : parsed.platform,
+            'app'       : parsed.app,
+            'IP'        : parsed.IP,
+            'time'      : parsed.datetime
         }
         self.stats = {
 
@@ -36,9 +41,14 @@ class Processor:
             # 'slotEnd': ,
         }
 
+
         self.quality = {
 
         }
+        self.quality['ad'] = {}
+        self.quality['content'] = {}
+
+        self.behavior = {}
 
     def reduce(self):
         self.stats['Platform'] = {}
@@ -47,27 +57,12 @@ class Processor:
         self.stats['App'] = {}
         app = self.stats['App']
 
-        for ua in self.metric['UA']:
 
-            if 'iPhone' in ua:
-                platform['iPhone'] = platform.get('iPhone', 0) + 1;
-            elif 'iPad' in ua:
-                platform['iPad'] = platform.get('iPad', 0) + 1;
-            elif 'Apple TV' in ua:
-                platform['Apple TV'] = platform.get('Apple TV', 0) + 1;
-            elif 'Android' in ua:
-                platform['Android'] = platform.get('Android', 0) + 1;
-            elif 'Mac' in ua:
-                platform['Mac'] = platform.get('Mac', 0) + 1;
-            elif 'Linux' in ua:
-                platform['Linux'] = platform.get('Linux', 0) + 1;
+        for p in self.metric['platform']:
+            platform[p] = platform.get(p, 0) + 1
 
-
-            if 'Mozilla' in ua:
-                app['ThirdParty'] = app.get('ThirdParty', 0) + 1;
-            elif 'AppleCoreMedia' in ua:
-                app['Native'] = app.get('Native', 0) + 1;
-
+        for a in self.metric['app']:
+            app[a] = app.get(a, 0) + 1
 
 
         self.stats['Ad'] = {}
@@ -76,65 +71,93 @@ class Processor:
         self.stats['Progress'] = {}
         progress = self.stats['Progress']
 
+
+        c = -1
         for req in self.metric['request']:
+            c+=1
+            ad_behave = ''
             raw_id = self.get_quartile(req, 'adid');
             if raw_id:
+                ad_behave+=raw_id
                 adid = int(raw_id);
                 ad[adid] = ad.get(adid, 0) + 1;
 
             raw_progress = self.get_quartile(req, 'cn');
             if raw_progress:
+                ad_behave+=(': '+raw_progress)
                 prog = raw_progress;
                 progress[prog] = progress.get(prog, 0) + 1;
 
-            raw_m3u8_url = self.get_quartile(req, '_fw_lpu');
+            bitrate = 0
+            raw_m3u8_url = self.get_quartile(req, '_fw_lpu')
             if raw_m3u8_url:
-                m3u8_url = raw_m3u8_url.replace('%3A',':');
+                m3u8_url = raw_m3u8_url.replace('%3A',':')
                 self.m3u8.append(m3u8_url)
+                bitrate = self.get_quality(m3u8_url)
+
+            behave = str(bitrate) + 'kbps' + '; ' + ad_behave
+            if bitrate==0 and ad_behave=='':
+                print req
+
+            time = self.get_time(self.metric['time'][c])
+            self.update_behavior(
+                self.metric['IP'][c],
+                self.metric['platform'][c],
+                self.metric['app'][c],
+                time,
+                behave
+                )
 
 
-    def get_quality(self):
-        self.quality['ad'] = {}
-        self.quality['content'] = {}
-        #self.quality['fuck'] = 0
-        #self.quality['fuck1'] = 0
+    def get_quality(self, url):
 
-        for url in self.m3u8:
-            if 'ads' in url:
-                if 'master' in url:
-                    self.quality['master'] = self.quality.get('master', 0) + 1
-                else:
-                    rexp=re.compile('/\d+K/')
-                    match=rexp.search(url)
-                    if match:
-                        bitrate = match.group(0).replace('/','').replace('K','') + 'kbps'
-                        self.quality['ad'][bitrate] = self.quality['ad'].get(bitrate, 0) + 1
-                    else:
-                        pass
-                        #print url
-                        #self.quality['fuck1'] += 1
+        br = 0
 
-            elif 'p-' in url:
-                st_ind = url[::-1].find('p-')
-                en_ind = url[len(url)-st_ind:].find('.m3u8')
-                if st_ind>-1 and en_ind>-1:
-                    raw_str = url[len(url)-st_ind+1:len(url)-st_ind+en_ind]
-                    if '_audio' in raw_str:
-                        raw_str = raw_str.replace('_audio','')
-                    bitrate = raw_str + 'kbps'
-                    self.quality['content'][bitrate] = self.quality['content'].get(bitrate, 0) + 1
-
-                elif 'tablet' in url or 'mobile' in url:
-                    self.quality['master'] = self.quality.get('master', 0) + 1
-                else:
-                    pass
-                    #print url
-                    #self.quality['fuck'] += 1
-
+        if 'ads' in url:
+            if 'master' in url:
+                self.quality['master'] = self.quality.get('master', 0) + 1
             else:
-                self.quality['unknown'] = self.quality.get('unknown', 0) + 1
-                print 'fuck'
+                rexp=re.compile('/\d+K/')
+                match=rexp.search(url)
+                if match:
+                    br = int(match.group(0).replace('/','').replace('K',''))
+                    bitrate = br #str(br) + 'kbps'
+                    self.quality['ad'][bitrate] = self.quality['ad'].get(bitrate, 0) + 1
+                else:
+                    print url
+                    self.quality['unknown'] = self.quality.get('unknown', 0) + 1
+                    raise IndexError
 
+        elif '-' in url:
+            rexp=re.compile('-\d+(_audio)?.m3u8')
+            match=rexp.search(url)
+
+            if match:
+                raw_str = match.group(0)
+                strip_str = []
+                for char in raw_str:
+                    if char >= '0' and char <= '9':
+                        strip_str.append(char)
+                    if char == '.':
+                        break
+
+                br = int(''.join(strip_str))
+                bitrate = br
+                self.quality['content'][bitrate] = self.quality['content'].get(bitrate, 0) + 1
+
+            elif 'tablet' in url or 'mobile' in url:
+                self.quality['master'] = self.quality.get('master', 0) + 1
+            else:
+                print url
+                self.quality['unknown'] = self.quality.get('unknown', 0) + 1
+                raise IndexError
+
+        else:
+            print url
+            self.quality['unknown'] = self.quality.get('unknown', 0) + 1
+            raise IndexError
+
+        return br
 
     # def get_progress(self, text):
 
@@ -149,6 +172,21 @@ class Processor:
                 return text[st_ind+len(tagname)+2:]
 
 
+    def update_behavior(self, ip, platform, app, time, bitrate):
+        user = ip + ':' + platform + ':' + app
+        if user not in self.behavior:
+            self.behavior[user] = []
+
+        behavior = (time, bitrate)
+        self.behavior[user].append(behavior)
+
+    def get_time(self, datetime):
+        rexp = re.compile('\d+:\d+:\d+\s')
+        m = rexp.search(datetime)
+        if m:
+            return m.group(0).replace(' ','')
+
+
 def print_sort(dic, k='k', seq='assending'):
     if isinstance(dic, dict):
         i = {'k':0, 'v':1}
@@ -161,20 +199,34 @@ def print_sort(dic, k='k', seq='assending'):
     else:
         print dic
 
+def print_behavior(behavior):
+
+    for behave in behavior:
+        print "\t\t" + "(" + behave[0] + ", " + behave[1] + ")"
+
 if __name__ == '__main__':
-    p = LogParser('log/prod-freewheel.espn.go.com.log')
-    p.proceed()
+    if not os.path.exists('dump/parsed'):
+        p = LogParser('log/prod-freewheel.espn.go.com.full.log')
+        p.proceed()
+    else:
+        p = cPickle.load(open('dump/parsed','rb'))
+
+
     proc = Processor(p)
     proc.reduce()
     print 'Number of ads types is ' + str(len(proc.stats['Ad']))
     for metric in proc.stats:
         print metric+ ': '
         print_sort(proc.stats[metric], 'v')
-    proc.get_quality()
     print len(proc.m3u8)
     for metric in proc.quality:
         print metric+ ': '
         print_sort(proc.quality[metric], 'k', 'descending')
+
+    for user in proc.behavior:
+        print user + ": "
+        for behave in proc.behavior[user]:
+            print "\t\t" + "(" + str(behave[0]) + ", " + str(behave[1]) + ")"
 
     #for u in proc.m3u8:
     #    print u

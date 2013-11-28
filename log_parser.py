@@ -5,7 +5,7 @@
     parser.py是系统模块的名字
 '''
 
-import re
+import re, cPickle
 from request import Request
 
 class LogParser:
@@ -16,11 +16,41 @@ class LogParser:
         self.datetime=[]
         self.size=[]
         self.UA=[]
+        self.platform=[]
+        self.app=[]
+        self.isfull="full" in self.file
 
 
     def proceed(self):
+
+        pattern = (r''
+           '(\d+.\d+.\d+.\d+)\s.+\s-\s' #IP address
+           '\[(.+)\]\s' #datetime
+           '"GET\s(.+)\s\w+/.+"\s(\d+)\s(\d+|-)' #requested file and HTTP code and
+                                                #file size(maybe not available)
+           '\s"(.+)"\s' #referrer
+           '"(.+)"' #user agent
+        )
+
+        ua_list = {
+            'Xbox', 'Windows', 'CrOS',
+            'iPod', 'Wii', 'PS', 'NativeHost',
+            'iPhone', 'iPad', 'Apple TV',
+            'Android', 'Mac', 'Linux'}
+
+        app_category = {
+            'Mozilla': 'ThirdParty',
+            'AppleCoreMedia': 'Native',
+            'VisualOn': 'AndroidThirdParty',
+            'Xbox': 'Native',
+            'youtube': 'YoutubeThirdParty'
+            }
+
+        if self.isfull:
+            pattern += '\s(\d+.\d+.\d+.\d+)'
         for line in open(self.file, 'r'):
-            self.parse(line)
+            self.parse(line, pattern, ua_list, app_category)
+
 
         #self.parse(open(self.file, 'r').read())
 
@@ -44,23 +74,39 @@ class LogParser:
 
     '''
 
-    def parse(self, line):
-        pat = (r''
-           '(\d+.\d+.\d+.\d+)\s.+\s-\s' #IP address
-           '\[(.+)\]\s' #datetime
-           '"GET\s(.+)\s\w+/.+"\s(\d+)\s(\d+)' #requested file and HTTP code and file size
-           '\s"(.+)"\s' #referrer
-           '"(.+)"' #user agent
-        )
+    def parse(self, line, pat, ua_list, app_cat):
+
         matched = self.find(pat, line, None)
-        #print matched
 
-        self.IP.append(matched[0][0]);
-        self.datetime.append(matched[0][1]);
-        self.request.append(matched[0][2]);
-        self.UA.append(matched[0][6]);
+        #self.IP.append(matched[0][0])
+        self.datetime.append(matched[0][1])
+        self.request.append(matched[0][2])
+        if(self.isfull):
+            self.IP.append(matched[0][7])
 
-        #areq = Request(matched[0][0], matched[0][1], matched[0][4], matched[0][6])
+        _ua = matched[0][6]
+        self.UA.append(_ua)
+
+        find = False
+        for ua_str in ua_list:
+            if ua_str in _ua:
+                self.platform.append(ua_str)
+                find = True
+                break
+
+
+
+
+
+        for app in app_cat:
+            if app in _ua:
+                self.app.append(app_cat[app])
+
+                break
+
+        if not find:
+            print _ua
+        #areq = Request(matched[0][7], matched[0][1], matched[0][4], matched[0][6])
         #print areq
 
 
@@ -74,6 +120,12 @@ class LogParser:
 
 if __name__ == '__main__':
 
-    p=LogParser('log/prod-freewheel.espn.go.com-head.log')
+    p=LogParser('log/prod-freewheel.espn.go.com.full.log')
     p.proceed()
+    print len(p.request)
+    print len(p.platform)
+    print len(p.app)
+    f=open('dump/parsed','wb')
+    cPickle.dump(p, f, True)
+    f.close()
 
