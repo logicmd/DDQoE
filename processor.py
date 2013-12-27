@@ -49,6 +49,7 @@ class Processor:
         self.quality['content'] = {}
 
         self.behavior = {}
+        self.ip_dict = {}
 
     def reduce(self):
         self.stats['Platform'] = {}
@@ -95,9 +96,14 @@ class Processor:
                 self.m3u8.append(m3u8_url)
                 bitrate = self.get_quality(m3u8_url)
 
-            behave = str(bitrate) + 'kbps' + '; ' + ad_behave
+            if bitrate == 'master':
+                behave = str(bitrate) + '; ' + ad_behave
+            else:
+                behave = str(bitrate) + 'kbps' + '; ' + ad_behave
+
             if bitrate==0 and ad_behave=='':
-                print req
+                #print req
+                pass
 
             time = self.get_time(self.metric['time'][c])
             self.update_behavior(
@@ -108,13 +114,21 @@ class Processor:
                 behave
                 )
 
+            #if ''
+            self.update_ip_dict(
+                self.metric['IP'][c],
+                self.metric['platform'][c],
+                self.metric['app'][c]
+                )
+
 
     def get_quality(self, url):
 
-        br = 0
+        br = None
 
         if 'ads' in url:
             if 'master' in url:
+                br = 'master'
                 self.quality['master'] = self.quality.get('master', 0) + 1
             else:
                 rexp=re.compile('/\d+K/')
@@ -146,6 +160,7 @@ class Processor:
                 self.quality['content'][bitrate] = self.quality['content'].get(bitrate, 0) + 1
 
             elif 'tablet' in url or 'mobile' in url:
+                br = 'master'
                 self.quality['master'] = self.quality.get('master', 0) + 1
             else:
                 print url
@@ -173,12 +188,20 @@ class Processor:
 
 
     def update_behavior(self, ip, platform, app, time, bitrate):
-        user = ip + ':' + platform + ':' + app
+        user = ip + '-' + platform #+ '-' + app
         if user not in self.behavior:
             self.behavior[user] = []
 
         behavior = (time, bitrate)
         self.behavior[user].append(behavior)
+
+    def update_ip_dict(self, ip, platform, app):
+        identifying = ip #+ '-' + app
+        if identifying not in self.ip_dict:
+            self.ip_dict[identifying] = []
+
+        attrib = (platform, app)
+        self.ip_dict[identifying].append(attrib)
 
     def get_time(self, datetime):
         rexp = re.compile('\d+:\d+:\d+\s')
@@ -214,19 +237,28 @@ if __name__ == '__main__':
 
     proc = Processor(p)
     proc.reduce()
-    print 'Number of ads types is ' + str(len(proc.stats['Ad']))
-    for metric in proc.stats:
-        print metric+ ': '
-        print_sort(proc.stats[metric], 'v')
-    print len(proc.m3u8)
-    for metric in proc.quality:
-        print metric+ ': '
-        print_sort(proc.quality[metric], 'k', 'descending')
 
-    for user in proc.behavior:
-        print user + ": "
-        for behave in proc.behavior[user]:
-            print "\t\t" + "(" + str(behave[0]) + ", " + str(behave[1]) + ")"
+    # Stats
+    # print 'Number of ads types is ' + str(len(proc.stats['Ad']))
+    # for metric in proc.stats:
+    #     print metric+ ': '
+    #     print_sort(proc.stats[metric], 'v')
+    # print len(proc.m3u8)
+    # for metric in proc.quality:
+    #     print metric+ ': '
+    #     print_sort(proc.quality[metric], 'k', 'descending')
+
+    # behavior
+    # for user in proc.behavior:
+    #     print user + ": "
+    #     for behave in proc.behavior[user]:
+    #         print "\t\t" + "(" + str(behave[0]) + ", " + str(behave[1]) + ")"
+
+    # ip_stats
+    for ip in proc.ip_dict:
+        print ip + ": "
+        for attrib in proc.ip_dict[ip]:
+            print "\t\t" + "(" + str(attrib[0]) + ", " + str(attrib[1]) + ")"
 
     #for u in proc.m3u8:
     #    print u

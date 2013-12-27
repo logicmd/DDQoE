@@ -32,17 +32,18 @@ class LogParser:
            '"(.+)"' #user agent
         )
 
-        ua_list = {
+        ua_list = [
             'Xbox', 'Windows', 'CrOS',
             'iPod', 'Wii', 'PS', 'NativeHost',
             'iPhone', 'iPad', 'Apple TV',
-            'Android', 'Mac', 'Linux'}
+            'Android', 'Mac', 'Linux'
+            ]
 
         app_category = {
-            'Mozilla': 'ThirdParty',
-            'AppleCoreMedia': 'Native',
-            'VisualOn': 'AndroidThirdParty',
-            'Xbox': 'Native',
+            'Mozilla': 'BrowserThirdParty',
+            'AppleCoreMedia': 'AppleNative',
+            'VisualOn': 'VisualOnThirdParty',
+            'Xbox': 'XboxNative',
             'youtube': 'YoutubeThirdParty'
             }
 
@@ -122,9 +123,8 @@ if __name__ == '__main__':
 
     p=LogParser('log/prod-freewheel.espn.go.com.full.log')
     p.proceed()
-    print len(p.request)
-    print len(p.platform)
-    print len(p.app)
+    if not len(p.datetime) == len(p.request) == len(p.UA) == len(p.platform) == len(p.app):
+        raise IndexError
     f=open('dump/parsed','wb')
     cPickle.dump(p, f, True)
     f.close()
