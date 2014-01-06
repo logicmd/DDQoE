@@ -237,32 +237,3 @@ if __name__ == '__main__':
 
     proc = Processor(p)
     proc.reduce()
-
-    # Stats
-    # print 'Number of ads types is ' + str(len(proc.stats['Ad']))
-    # for metric in proc.stats:
-    #     print metric+ ': '
-    #     print_sort(proc.stats[metric], 'v')
-    # print len(proc.m3u8)
-    # for metric in proc.quality:
-    #     print metric+ ': '
-    #     print_sort(proc.quality[metric], 'k', 'descending')
-
-    # behavior
-    # for user in proc.behavior:
-    #     print user + ": "
-    #     for behave in proc.behavior[user]:
-    #         print "\t\t" + "(" + str(behave[0]) + ", " + str(behave[1]) + ")"
-
-    # ip_stats
-    for ip in proc.ip_dict:
-        print ip + ": "
-        for attrib in proc.ip_dict[ip]:
-            print "\t\t" + "(" + str(attrib[0]) + ", " + str(attrib[1]) + ")"
-
-    #for u in proc.m3u8:
-    #    print u
-    #for url in proc.m3u8:
-    #    print url
-
-

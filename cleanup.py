@@ -1,27 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''
-    parser.py是系统模块的名字
-'''
+''' Produce a clean up logs. '''
 
-import re, cPickle, bz2
-from request import Request
 
-class LogParser:
-    def __init__(self, file_name=None, max_line=-1):
+import re, bz2
+
+class Cleaner:
+    def __init__(self, file_name=None, output=None, max_line=-1):
         self.file=file_name
-        self.request=[]
-        self.IP=[]
-        self.datetime=[]
-        self.size=[]
-        self.UA=[]
-        self.platform=[]
-        self.app=[]
         self.is_bz="bz" in self.file
         self.is_full=self.is_bz or "full" in self.file
         self.is_infinite=(max_line<0)
         self.max_line=max_line
+        self.output=output
 
 
 
@@ -62,14 +54,17 @@ class LogParser:
         else:
             f = open(self.file, 'r')
 
-        for line in f:
-            self.parse(line, pattern, ua_list, app_category)
+        fout = bz2.BZ2File(self.output, 'w')
 
+        for line in f:
+            IP, request, platform, app = self.parse(line, pattern, ua_list, app_category)
+            # print  IP+', '+request+', '+platform+', '+app
+            fout.writelines(IP+', '+request+', '+platform+', '+app)
             if not self.is_infinite:
                 self.max_line -= 1
                 if self.max_line<=0:
                     break
-
+        fout.close()
     '''
         re.findall的写法要求对每一行都把所有组成部分的正则表达式子都写出来，
         括号里面标注要match输出的
@@ -94,15 +89,15 @@ class LogParser:
 
         matched = self.find(pat, line, None)
         if matched:
-            self.datetime.append(matched[0][1])
-            self.request.append(matched[0][2])
+            datetime=matched[0][1]
+            request=matched[0][2]
+            IP = None
             if(self.is_full):
-                self.IP.append(matched[0][7])
+                IP=matched[0][7]
             else:
-                self.IP.append(matched[0][0])
+                IP=matched[0][0]
 
             _ua = matched[0][6]
-            self.UA.append(_ua)
 
             find1 = False, find2 = False
             for ua_str in ua_list:
@@ -118,11 +113,11 @@ class LogParser:
                     break
 
             if not (find1 and find2):
-                print _ua
-            print matched[0][7], matched[0][1], matched[0][4], matched[0][6]
+                raise NameError('Unindentified UA' + _ua + '\n original line is: ' + line)
+            #print IP, matched[0][1], matched[0][4], matched[0][6]
+            return IP, request, ua_str, app_cat[app]
         else:
-            print line
-            raise NameError("parsed error")
+            raise NameError(line + ": Parsed error!")
 
 
 
@@ -135,11 +130,6 @@ class LogParser:
 
 if __name__ == '__main__':
 
-    p=LogParser('log/prod-freewheel.espn.go.com.log.bz2', max_line=5)
+    p=Cleaner('log/prod-freewheel.espn.go.com.log.bz2','/tmp/ram/cleaned_log')
     p.proceed()
-    if not len(p.datetime) == len(p.request) == len(p.UA) == len(p.platform) == len(p.app):
-        raise IndexError('Sample Number Not Consistent')
-    f=open('dump/parsed','wb')
-    cPickle.dump(p, f, True)
-    f.close()
 
