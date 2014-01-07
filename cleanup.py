@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-''' Produce a clean up logs. '''
+'''
+    cleanup.py refactor the log_parser logics
+               Produce a clean up logs.
+'''
 
 
-import re, bz2
+import re, bz2, datetime, time
 
 class Cleaner:
     def __init__(self, file_name=None, output=None, max_line=-1):
         self.file=file_name
         self.is_bz="bz" in self.file
-        self.is_full=self.is_bz or "full" in self.file
+        self.is_full=True
         self.is_infinite=(max_line<0)
         self.max_line=max_line
         self.output=output
@@ -57,9 +60,9 @@ class Cleaner:
         fout = bz2.BZ2File(self.output, 'w')
 
         for line in f:
-            IP, request, platform, app = self.parse(line, pattern, ua_list, app_category)
+            IP, date_time, request, platform, app = self.parse(line, pattern, ua_list, app_category)
             # print  IP+', '+request+', '+platform+', '+app
-            fout.writelines(IP+', '+request+', '+platform+', '+app)
+            fout.write(IP+', '+date_time+', '+request+', '+platform+', '+app+'\n')
             if not self.is_infinite:
                 self.max_line -= 1
                 if self.max_line<=0:
@@ -89,7 +92,9 @@ class Cleaner:
 
         matched = self.find(pat, line, None)
         if matched:
-            datetime=matched[0][1]
+            date_time=matched[0][1][:-6] # really dirty...
+            if date_time:
+                date_time=time.mktime(datetime.datetime.strptime(date_time, "%d/%b/%Y:%H:%M:%S").timetuple())
             request=matched[0][2]
             IP = None
             if(self.is_full):
@@ -99,25 +104,25 @@ class Cleaner:
 
             _ua = matched[0][6]
 
-            find1 = False, find2 = False
-            for ua_str in ua_list:
-                if ua_str in _ua:
-                    self.platform.append(ua_str)
+            find1, find2, ua_str, app_str = False, False, None, None
+            for ua_str_ in ua_list:
+                if ua_str_ in _ua:
                     find1 = True
+                    ua_str = ua_str_
                     break
 
             for app in app_cat:
                 if app in _ua:
-                    self.app.append(app_cat[app])
                     find2 = True
+                    app_str = app_cat[app]
                     break
 
             if not (find1 and find2):
-                raise NameError('Unindentified UA' + _ua + '\n original line is: ' + line)
+                print('Unindentified UA: ' + _ua + '\noriginal line is: ' + line)
             #print IP, matched[0][1], matched[0][4], matched[0][6]
-            return IP, request, ua_str, app_cat[app]
+            return IP, str(date_time), request, str(ua_str), str(app_str)
         else:
-            raise NameError(line + ": Parsed error!")
+            raise NameError(line + ': Parsed error!')
 
 
 
@@ -130,6 +135,6 @@ class Cleaner:
 
 if __name__ == '__main__':
 
-    p=Cleaner('log/prod-freewheel.espn.go.com.log.bz2','/tmp/ram/cleaned_log')
+    p=Cleaner('./log/sample.log','/tmp/ram/cleaned_log.bz2')
     p.proceed()
 

@@ -1,125 +1,98 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import re, cPickle, os
-from log_parser import LogParser
+
+import bz2
 
 '''
-    cn : callback name就代表广告播放的进度
-    n : network 代表网络，reseller network id(s), content right owner network id
-    adid : ad id
-
-    progress
-    slotImpression:slotEnd
-    defaultImpression:firstQuartile:midPoint:thirdQuartile:complete:adEnd
-    _e_renderer-load、_e_unknown
-
-
-
+    stats.py refactor the processor logics
 '''
 
-class Processor:
-    def __init__(self, parsed):
-        self.metric = {
-            #'IP': parsed.IP,
-            #'datetime': parsed.datetime,
-            'UA'        : parsed.UA,
-            'request'   : parsed.request,
-            'platform'  : parsed.platform,
-            'app'       : parsed.app,
-            'IP'        : parsed.IP,
-            'time'      : parsed.datetime
-        }
+class Statistician:
+    def __init__(self, file):
+        self.file = file
         self.stats = {
-
+            'Platform': {},
+            'App': {}
+            'Ad': {}
+            'Progress': {}
         }
 
         self.m3u8 = []
 
-        progress = {
-            # 'complete': ,
-            # 'adEnd': ,
-            # 'slotEnd': ,
-        }
-
-
         self.quality = {
-
+            'ad': {}
+            'content': {}
         }
-        self.quality['ad'] = {}
-        self.quality['content'] = {}
 
         self.behavior = {}
         self.ip_dict = {}
 
-    def reduce(self):
-        self.stats['Platform'] = {}
-        platform = self.stats['Platform']
+    def split(self):
+        if 'bz2' in self.file:
+            f = bz2.BZ2File(self.file, 'r')
+        else:
+            f = open(self.file, 'r')
+        for line in f:
+            elements = line.split(', ')
 
-        self.stats['App'] = {}
-        app = self.stats['App']
+    def reduce(self, elements):
+        platform_stats = self.stats['Platform']
+        platform = elements[3]
+        platform_stats[platform] = platform_stats.get(platform, 0) + 1
 
+        app_stats = self.stats['App']
+        app = elements[4]
+        app_stats[app] = app_stats.get(app, 0) + 1
 
-        for p in self.metric['platform']:
-            platform[p] = platform.get(p, 0) + 1
-
-        for a in self.metric['app']:
-            app[a] = app.get(a, 0) + 1
-
-
-        self.stats['Ad'] = {}
         ad = self.stats['Ad']
-
-        self.stats['Progress'] = {}
         progress = self.stats['Progress']
 
+        req = elements[2]
+        ad_behave = ''
+        raw_id = self.get_quartile(req, 'adid');
+        if raw_id:
+            ad_behave+=raw_id
+            adid = int(raw_id);
+            ad[adid] = ad.get(adid, 0) + 1;
 
-        c = -1
-        for req in self.metric['request']:
-            c+=1
-            ad_behave = ''
-            raw_id = self.get_quartile(req, 'adid');
-            if raw_id:
-                ad_behave+=raw_id
-                adid = int(raw_id);
-                ad[adid] = ad.get(adid, 0) + 1;
+        raw_progress = self.get_quartile(req, 'cn');
+        if raw_progress:
+            ad_behave+=(': '+raw_progress)
+            prog = raw_progress;
+            progress[prog] = progress.get(prog, 0) + 1;
 
-            raw_progress = self.get_quartile(req, 'cn');
-            if raw_progress:
-                ad_behave+=(': '+raw_progress)
-                prog = raw_progress;
-                progress[prog] = progress.get(prog, 0) + 1;
+        bitrate = 0
+        raw_m3u8_url = self.get_quartile(req, '_fw_lpu')
+        if raw_m3u8_url:
+            m3u8_url = raw_m3u8_url.replace('%3A',':')
+            self.m3u8.append(m3u8_url)
+            bitrate = self.get_quality(m3u8_url)
 
-            bitrate = 0
-            raw_m3u8_url = self.get_quartile(req, '_fw_lpu')
-            if raw_m3u8_url:
-                m3u8_url = raw_m3u8_url.replace('%3A',':')
-                self.m3u8.append(m3u8_url)
-                bitrate = self.get_quality(m3u8_url)
+        if bitrate == 'master':
+            behave = str(bitrate) + '; ' + ad_behave
+        else:
+            behave = str(bitrate) + 'kbps' + '; ' + ad_behave
 
-            if bitrate == 'master':
-                behave = str(bitrate) + '; ' + ad_behave
-            else:
-                behave = str(bitrate) + 'kbps' + '; ' + ad_behave
+        if bitrate==0 and ad_behave=='':
+            #print req
+            pass
 
-            if bitrate==0 and ad_behave=='':
-                #print req
-                pass
-
-            time = self.get_time(self.metric['time'][c])
-            self.update_behavior(
-                self.metric['IP'][c],
-                self.metric['platform'][c],
-                self.metric['app'][c],
+        time = elements[1]
+        IP = elements[0]
+        self.update_behavior(
+                IP,
+                platform,
+                app,
                 time,
                 behave
-                )
+             )
 
-            #if ''
-            self.update_ip_dict(
-                self.metric['IP'][c],
-                self.metric['platform'][c],
-                self.metric['app'][c]
-                )
+        #if ''
+        self.update_ip_dict(
+                IP,
+                platform,
+                app
+            )
 
 
     def get_quality(self, url):

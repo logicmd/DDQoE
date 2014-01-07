@@ -3,6 +3,11 @@
 import cPickle, os
 from log_parser import LogParser
 from processor import Processor
+from cleanup import Cleaner
+
+def clean_up_pro():
+    p=Cleaner('./log/prod-freewheel.espn.go.com.log.bz2','/tmp/ram/cleaned_log.bz2')
+    p.proceed()
 
 def log_parser_pro():
     p=LogParser('log/prod-freewheel.espn.go.com.log.bz2', 5)
@@ -54,4 +59,4 @@ def integration():
 
 
 if __name__ == '__main__':
-    log_parser_pro()
+    clean_up_pro()
