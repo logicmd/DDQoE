@@ -1,6 +1,9 @@
 \log
 \dump
 
+*.log
+*.gz
+
 *.py[cod]
 
 # C extensions
