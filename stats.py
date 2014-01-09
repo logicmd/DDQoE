@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import bz2
+import bz2, os, re, datetime
 
 '''
     stats.py refactor the processor logics
@@ -12,28 +12,32 @@ class Statistician:
         self.file = file
         self.stats = {
             'Platform': {},
-            'App': {}
-            'Ad': {}
+            'App': {},
+            'Ad': {},
             'Progress': {}
         }
 
         self.m3u8 = []
 
         self.quality = {
-            'ad': {}
+            'ad': {},
             'content': {}
         }
 
         self.behavior = {}
         self.ip_dict = {}
 
-    def split(self):
+    def gen_stats(self):
         if 'bz2' in self.file:
             f = bz2.BZ2File(self.file, 'r')
         else:
             f = open(self.file, 'r')
         for line in f:
             elements = line.split(', ')
+            self.reduce(elements)
+
+        for user in self.behavior.keys():
+            self.behavior[user].sort(key=lambda x:x[0], reverse=True) # Time
 
     def reduce(self, elements):
         platform_stats = self.stats['Platform']
@@ -41,7 +45,7 @@ class Statistician:
         platform_stats[platform] = platform_stats.get(platform, 0) + 1
 
         app_stats = self.stats['App']
-        app = elements[4]
+        app = elements[4].replace('\n','')
         app_stats[app] = app_stats.get(app, 0) + 1
 
         ad = self.stats['Ad']
@@ -77,7 +81,7 @@ class Statistician:
             #print req
             pass
 
-        time = elements[1]
+        time = float(elements[1])
         IP = elements[0]
         self.update_behavior(
                 IP,
@@ -87,12 +91,7 @@ class Statistician:
                 behave
              )
 
-        #if ''
-        self.update_ip_dict(
-                IP,
-                platform,
-                app
-            )
+        #self.update_ip_dict( IP, platform, app )
 
 
     def get_quality(self, url):
@@ -147,8 +146,6 @@ class Statistician:
 
         return br
 
-    # def get_progress(self, text):
-
 
     def get_quartile(self, text, tagname):
         st_ind = text.find('&' + tagname + '=')
@@ -169,7 +166,7 @@ class Statistician:
         self.behavior[user].append(behavior)
 
     def update_ip_dict(self, ip, platform, app):
-        identifying = ip #+ '-' + app
+        identifying = ip + '-' + app
         if identifying not in self.ip_dict:
             self.ip_dict[identifying] = []
 
@@ -198,42 +195,34 @@ def print_sort(dic, k='k', seq='assending'):
 def print_behavior(behavior):
 
     for behave in behavior:
-        print "\t\t" + "(" + behave[0] + ", " + behave[1] + ")"
+        timestamp=behave[0]
+        if not isinstance(timestamp, basestring):
+            timestamp=datetime.datetime.fromtimestamp(timestamp).strftime('%H:%M:%S')
+
+        print "\t\t" + "(" + timestamp + ", " + behave[1] + ")"
 
 if __name__ == '__main__':
-    if not os.path.exists('dump/parsed'):
-        p = LogParser('log/prod-freewheel.espn.go.com.full.log')
-        p.proceed()
-    else:
-        p = cPickle.load(open('dump/parsed','rb'))
+    if not os.path.exists('dump/cleaned_log.bz2'):
+        c = Cleaner('log/prod-freewheel.espn.go.com.full.log','./dump/cleaned_log.bz2')
+        c.proceed()
 
 
-    proc = Processor(p)
-    proc.reduce()
+    st = Statistician('dump/cleaned_log.bz2')
+
+    st.gen_stats()
 
     # Stats
-    # print 'Number of ads types is ' + str(len(proc.stats['Ad']))
-    # for metric in proc.stats:
-    #     print metric+ ': '
-    #     print_sort(proc.stats[metric], 'v')
-    # print len(proc.m3u8)
-    # for metric in proc.quality:
-    #     print metric+ ': '
-    #     print_sort(proc.quality[metric], 'k', 'descending')
+    print 'Number of ads types is ' + str(len(st.stats['Ad']))
+    for metric in st.stats:
+        print metric+ ': '
+        print_sort(st.stats[metric], 'v')
+    print len(st.m3u8)
+    for metric in st.quality:
+        print metric+ ': '
+        print_sort(st.quality[metric], 'k', 'descending')
 
     # behavior
-    # for user in proc.behavior:
-    #     print user + ": "
-    #     for behave in proc.behavior[user]:
-    #         print "\t\t" + "(" + str(behave[0]) + ", " + str(behave[1]) + ")"
+    for user in st.behavior:
+        print user + ": "
+        print_behavior(st.behavior[user])
 
-    # ip_stats
-    for ip in proc.ip_dict:
-        print ip + ": "
-        for attrib in proc.ip_dict[ip]:
-            print "\t\t" + "(" + str(attrib[0]) + ", " + str(attrib[1]) + ")"
-
-    #for u in proc.m3u8:
-    #    print u
-    #for url in proc.m3u8:
-    #    print url

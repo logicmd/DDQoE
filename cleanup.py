@@ -135,6 +135,6 @@ class Cleaner:
 
 if __name__ == '__main__':
 
-    p=Cleaner('./log/sample.log','/tmp/ram/cleaned_log.bz2')
+    p=Cleaner('./log/prod-freewheel.espn.go.com.full.log','./dump/cleaned_log.bz2')
     p.proceed()
 
