@@ -37,7 +37,7 @@ class Statistician:
             self.reduce(elements)
 
         for user in self.behavior.keys():
-            self.behavior[user].sort(key=lambda x:x[0], reverse=True) # Time
+            self.behavior[user].sort(key=lambda x:x[0], reverse=False) # Time
 
     def reduce(self, elements):
         platform_stats = self.stats['Platform']
@@ -98,21 +98,23 @@ class Statistician:
 
         br = None
 
-        if 'ads' in url:
+        if 'K/' in url:
+            rexp=re.compile('/\d+K/')
+            match=rexp.search(url)
+            if match:
+                br = int(match.group(0).replace('/','').replace('K',''))
+                bitrate = br #str(br) + 'kbps'
+                self.quality['ad'][bitrate] = self.quality['ad'].get(bitrate, 0) + 1
+
+
+        elif 'ads' in url:
             if 'master' in url:
                 br = 'master'
                 self.quality['master'] = self.quality.get('master', 0) + 1
             else:
-                rexp=re.compile('/\d+K/')
-                match=rexp.search(url)
-                if match:
-                    br = int(match.group(0).replace('/','').replace('K',''))
-                    bitrate = br #str(br) + 'kbps'
-                    self.quality['ad'][bitrate] = self.quality['ad'].get(bitrate, 0) + 1
-                else:
-                    print url
-                    self.quality['unknown'] = self.quality.get('unknown', 0) + 1
-                    raise IndexError
+                print url
+                self.quality['unknown'] = self.quality.get('unknown', 0) + 1
+                raise IndexError
 
         elif '-' in url:
             rexp=re.compile('-\d+(_audio)?.m3u8')
@@ -208,6 +210,12 @@ if __name__ == '__main__':
 
 
     st = Statistician('dump/cleaned_log.bz2')
+
+
+    # url = "http://espnlive-akc.bamnetworks.espn.go.com/ls04/espn/2013/12/21/ESPN_VIDEO_5S_M3U8_1378283_20131221/400K/400_slide.m3u8"
+    # print st.get_quality(url)
+
+
 
     st.gen_stats()
 
