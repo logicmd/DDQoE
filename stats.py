@@ -112,9 +112,8 @@ class Statistician:
                 br = 'master'
                 self.quality['master'] = self.quality.get('master', 0) + 1
             else:
-                print url
                 self.quality['unknown'] = self.quality.get('unknown', 0) + 1
-                raise IndexError
+                raise NameError('unable to parse the bitrate in the url:\n' + url)
 
         elif '-' in url:
             rexp=re.compile('-\d+(_audio)?.m3u8')
@@ -137,14 +136,12 @@ class Statistician:
                 br = 'master'
                 self.quality['master'] = self.quality.get('master', 0) + 1
             else:
-                print url
                 self.quality['unknown'] = self.quality.get('unknown', 0) + 1
-                raise IndexError
+                raise NameError('unable to parse the bitrate in the url:\n' + url)
 
         else:
-            print url
             self.quality['unknown'] = self.quality.get('unknown', 0) + 1
-            raise IndexError
+            raise NameError('unable to parse the bitrate in the url:\n' + url)
 
         return br
 
