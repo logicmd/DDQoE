@@ -106,14 +106,17 @@ class Statistician:
                 bitrate = br #str(br) + 'kbps'
                 self.quality['ad'][bitrate] = self.quality['ad'].get(bitrate, 0) + 1
 
+        elif 'K.m3u8' in url:
+            rexp=re.compile('\d+K.m3u8')
+            match=rexp.search(url)
+            if match:
+                br = int(match.group(0).replace('K.m3u8',''))
+                bitrate = br #str(br) + 'kbps'
+                self.quality['content'][bitrate] = self.quality['content'].get(bitrate, 0) + 1
 
-        elif 'ads' in url:
-            if 'master' in url:
+        elif 'ads' in url and 'master' in url:
                 br = 'master'
                 self.quality['master'] = self.quality.get('master', 0) + 1
-            else:
-                self.quality['unknown'] = self.quality.get('unknown', 0) + 1
-                raise NameError('unable to parse the bitrate in the url:\n' + url)
 
         elif '-' in url:
             rexp=re.compile('-\d+(_audio)?.m3u8')
@@ -132,7 +135,7 @@ class Statistician:
                 bitrate = br
                 self.quality['content'][bitrate] = self.quality['content'].get(bitrate, 0) + 1
 
-            elif 'tablet' in url or 'mobile' in url:
+            elif 'tablet' in url or 'mobile' in url or 'console' in url:
                 br = 'master'
                 self.quality['master'] = self.quality.get('master', 0) + 1
             else:
