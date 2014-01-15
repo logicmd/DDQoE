@@ -96,7 +96,6 @@ class Cleaner:
         #    return
 
         matched = self.find(pat, line, None)
-        print pat
 
         if matched:
             mat=matched[0]
