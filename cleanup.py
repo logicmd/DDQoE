@@ -64,9 +64,8 @@ class Cleaner:
 
         for line in f:
             IP, date_time, request, platform, app, method = self.parse(line, pattern, ua_list, app_category)
-            # print  IP+', '+request+', '+platform+', '+app
             fout.write(IP+', '+date_time+', '+request+', '+platform+', '+app+', '+method+'\n')
-            print(IP+', '+date_time+', '+request+', '+platform+', '+app+', '+method+'\n')
+            #print(IP+', '+date_time+', '+request+', '+platform+', '+app+', '+method+'\n')
             if not self.is_infinite:
                 self.max_line -= 1
                 if self.max_line<=0:
