@@ -10,10 +10,10 @@
 import re, bz2, datetime, time
 
 class Cleaner:
-    def __init__(self, file_name=None, output=None, max_line=-1):
-        self.file=file_name
-        self.is_bz="bz" in self.file
-        self.is_full=True
+    def __init__(self, input=None, output=None, max_line=-1, with_prefix=True, real_IP=True):
+        self.file=input
+        self.with_prefix=with_prefix
+        self.real_IP=real_IP
         self.is_infinite=(max_line<0)
         self.max_line=max_line
         self.output=output
@@ -25,8 +25,8 @@ class Cleaner:
         pattern = (r''
            '(\d+.\d+.\d+.\d+)\s.+\s-\s' #IP address
            '\[(.+)\]\s' #datetime
-           '"GET\s(.+)\s\w+/.+"\s(\d+)\s(\d+|-)' #requested file and HTTP code and
-                                                #file size(maybe not available)
+           '"((POST|HEAD|GET|PUT|DELETE|TRACE|CONNECT|OPTIONS))\s(.+)\s\w+/.+"\s(\d+)\s(\d+|-)'
+           #requested file and HTTP code and file size(maybe not available)
            '\s"(.+)"\s' #referrer
            '"(.+)"' #user agent
         )
@@ -46,10 +46,10 @@ class Cleaner:
             'youtube': 'YoutubeThirdParty'
             }
 
-        if self.is_bz:
+        if self.with_prefix:
             pattern = '.+' + pattern
 
-        if self.is_full:
+        if self.real_IP:
             pattern += '\s(\d+.\d+.\d+.\d+)'
 
         if '.bz' in self.file:
@@ -60,9 +60,10 @@ class Cleaner:
         fout = bz2.BZ2File(self.output, 'w')
 
         for line in f:
-            IP, date_time, request, platform, app = self.parse(line, pattern, ua_list, app_category)
+            IP, date_time, request, platform, app, method = self.parse(line, pattern, ua_list, app_category)
             # print  IP+', '+request+', '+platform+', '+app
-            fout.write(IP+', '+date_time+', '+request+', '+platform+', '+app+'\n')
+            fout.write(IP+', '+date_time+', '+request+', '+platform+', '+app+', '+method+'\n')
+            print(IP+', '+date_time+', '+request+', '+platform+', '+app+', '+method+'\n')
             if not self.is_infinite:
                 self.max_line -= 1
                 if self.max_line<=0:
@@ -89,20 +90,26 @@ class Cleaner:
     '''
 
     def parse(self, line, pat, ua_list, app_cat):
+        #if "POST " in line or "HEAD " in line:
+        #    return
 
         matched = self.find(pat, line, None)
+        print pat
+
         if matched:
-            date_time=matched[0][1][:-6] # really dirty...
+            mat=matched[0]
+
+            date_time=mat[1][:-6] # really dirty...
             if date_time:
                 date_time=time.mktime(datetime.datetime.strptime(date_time, "%d/%b/%Y:%H:%M:%S").timetuple())
-            request=matched[0][2]
+            request=mat[4]
             IP = None
-            if(self.is_full):
-                IP=matched[0][7]
+            if(self.real_IP):
+                IP=mat[9]
             else:
-                IP=matched[0][0]
+                IP=mat[0]
 
-            _ua = matched[0][6]
+            _ua = mat[7]
 
             find1, find2, ua_str, app_str = False, False, None, None
             for ua_str_ in ua_list:
@@ -119,8 +126,10 @@ class Cleaner:
 
             if not (find1 and find2):
                 print('Unindentified UA: ' + _ua + '\noriginal line is: ' + line)
-            #print IP, matched[0][1], matched[0][4], matched[0][6]
-            return IP, str(date_time), request, str(ua_str), str(app_str)
+
+            method=mat[2]
+
+            return IP, str(date_time), request, str(ua_str), str(app_str), method
         else:
             raise NameError(line + ': Parsed error!')
 
@@ -135,6 +144,5 @@ class Cleaner:
 
 if __name__ == '__main__':
 
-    p=Cleaner('./log/prod-freewheel.espn.go.com.full.log','./dump/cleaned_log.bz2')
+    p=Cleaner('./log/sample.log','./dump/cleaned_log.bz2')
     p.proceed()
-
