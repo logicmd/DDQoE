@@ -8,6 +8,7 @@
 
 
 import re, bz2, datetime, time
+#import threading
 
 class Cleaner:
     def __init__(self, file_name=None, output=None, max_line=-1):
@@ -57,10 +58,7 @@ class Cleaner:
         else:
             f = open(self.file, 'r')
 
-        if 'bz' in self.output:
-            fout = bz2.BZ2File(self.output, 'w')
-        else:
-            fout = open(self.output, 'w')
+        fout = bz2.BZ2File(self.output, 'w')
 
         for line in f:
             IP, date_time, request, platform, app = self.parse(line, pattern, ua_list, app_category)
@@ -138,6 +136,6 @@ class Cleaner:
 
 if __name__ == '__main__':
 
-    p=Cleaner('./log/prod-freewheel.espn.go.com.full.log','./dump/cleaned_log.bz2')
+    p=Cleaner('./log/sample.log','/tmp/ram/cleaned_log.bz2')
     p.proceed()
 
