@@ -104,13 +104,16 @@ class Cleaner:
             if date_time:
                 date_time=time.mktime(datetime.datetime.strptime(date_time, "%d/%b/%Y:%H:%M:%S").timetuple())
             request=mat[4]
+            # HTTP code = mat[5]
+            # Request size = mat[6]
+            # Referrer = mat[7]
             IP = None
             if(self.real_IP):
                 IP=mat[9]
             else:
                 IP=mat[0]
 
-            _ua = mat[7]
+            _ua = mat[8]
 
             find1, find2, ua_str, app_str = False, False, None, None
             for ua_str_ in ua_list:
@@ -128,7 +131,7 @@ class Cleaner:
             if not (find1 and find2):
                 print('Unindentified UA: ' + _ua + '\noriginal line is: ' + line)
 
-            method=mat[2]
+            method=mat[2] # mat[3] is the same
 
             return IP, str(date_time), request, str(ua_str), str(app_str), method
         else:
@@ -145,5 +148,5 @@ class Cleaner:
 
 if __name__ == '__main__':
 
-    p=Cleaner('./log/sample.log','./dump/cleaned_log.bz2')
+    p=Cleaner('./log/sample.log','./dump/sample_cleaned.log')
     p.proceed()
