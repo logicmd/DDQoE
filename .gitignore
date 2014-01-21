@@ -3,6 +3,7 @@
 
 *.log
 *.gz
+*.csv
 
 *.py[cod]
 

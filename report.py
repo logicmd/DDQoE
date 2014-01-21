@@ -53,9 +53,11 @@ class Reporter:
 
 
 if __name__ == '__main__':
-    if not os.path.exists('/dev/shm/cleaned.log'):
-        os.system('bzcat /home/tangkai/DDQoE/dump/cleaned_log.bz2 > /dev/shm/cleaned.log')
-    st = Statistician('/dev/shm/cleaned.log')
+    #if not os.path.exists('/dev/shm/cleaned.log'):
+    #    os.system('bzcat /home/tangkai/DDQoE/dump/cleaned_log.bz2 > /dev/shm/cleaned.log')
+    #st = Statistician('/dev/shm/cleaned.log')
+
+    st = Statistician('/dev/shm/cleaned_run.log')
     st.gen_stats()
     reporter = Reporter(st)
 

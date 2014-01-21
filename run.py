@@ -35,7 +35,7 @@ if __name__ == '__main__':
     if not os.path.exists('/dev/shm/in.log'):
         os.system('bzcat /home/tangkai/DDQoE/log/prod-freewheel.espn.go.com.log.bz2 >' +
                 '/dev/shm/in.log')
-    if not os.path.exists('/dev/shm/cleaned_run.log'):
+    if True or not os.path.exists('/dev/shm/cleaned_run.log'):
         c = Cleaner('/dev/shm/in.log', '/dev/shm/cleaned_run.log')
         c.proceed()
 
