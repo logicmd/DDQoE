@@ -26,9 +26,9 @@ class Statistician:
         }
 
         self.behavior = {}
-        self.feature_file = './ml/data/feature.csv'
-        self.time_train_file = './ml/data/time_train'
-        self.ad_train_file = './ml/data/ad_train'
+        self.feature_file = '/home/tangkai/DDQoE/dump/feature.csv'
+        self.time_train_file = '/home/tangkai/DDQoE/dump/time_train'
+        self.ad_train_file = '/home/tangkai/DDQoE/dump/ad_train'
 
 
     def gen_stats(self):
@@ -94,26 +94,9 @@ class Statistician:
         self.update_behavior( u, time, behave )
 
     def reduce(self, interval=300):
-
-        print self.feature_file
-        print self.ad_train_file
-        print self.time_train_file
-
-        feature_output = open('./ml/data/feature.csv', 'w')
-        time_train_4 = open('./ml/data/time_train4', 'w')
-        ad_train_4 = open('./ml/data/ad_train4', 'w')
-
-        time_train_2 = open(self.time_train_file+'2', 'w')
-        ad_train_2 = open(self.ad_train_file+'2', 'w')
-
-        time_train_3_plat = open(self.time_train_file+'3_plat', 'w')
-        ad_train_3_plat = open(self.ad_train_file+'3_plat', 'w')
-
-        time_train_3_init_ts = open(self.time_train_file+'3_init_ts', 'w')
-        ad_train_3_init_ts = open(self.ad_train_file+'3_init_ts', 'w')
-
-        fff = open('./ml/data/fff', 'w')
-        fff.write('kidding')
+        feature_output = open(self.feature_file, 'w')
+        time_train = open(self.time_train_file, 'w')
+        ad_train = open(self.ad_train_file, 'w')
 
         platform2ind = \
         {
@@ -127,10 +110,6 @@ class Statistician:
             'None' :8,
         }
 
-        media_num = 0
-        ad_num = 0
-        master_num = 0
-
         for user, behavior_list in self.behavior.iteritems():
             previous_ts = 0
             initial_ts = 0
@@ -140,6 +119,7 @@ class Statistician:
             time_len = 0
             ad_prog_dict = {}
 
+            media_num = 0
 
             for i in xrange(len(behavior_list)):
 
@@ -151,27 +131,27 @@ class Statistician:
                 if isinstance(behave, Ad):
                     prog = behave.progress
                     ad_prog_dict[prog] = ad_prog_dict.get(prog, 0) + 1
-                    #print prog, ad_prog_dict[prog]
-                    ad_num += 1
+                    print prog, ad_prog_dict[prog]
 
                 elif isinstance(behave, Media):
                     bitrate = behave.bitrate
                     if len(bitrate_list) > 0 and not bitrate == bitrate_list[-1]:
                         switchoff += 1
 
-                    bitrate_list.append(behave.bitrate)
-                    media_num += 1
+                #elif isinstance(behave, Master)
 
-                elif isinstance(behave, Master):
-                    master_num += 1
+                    bitrate_list.append(behave.bitrate)
 
                 if ts - previous_ts < 0 or i == len(behavior_list) - 1:
 
-                    avg_bitrate = -1
+                    bitrate = -1
                     if len(bitrate_list) > 0:
                         avg_bitrate = sum(bitrate_list) * 1.0 / len(bitrate_list)
                         time_len = behavior_list[i][0] - initial_ts
 
+                        media_num += len(bitrate_list)
+
+                    #iif(behave)
 
                     ad_percentage = -1.00
                     if ad_prog_dict.get(0, 0) != 0:
@@ -182,48 +162,27 @@ class Statistician:
                             0.75 * (ad_prog_dict.get(3, 0) - ad_prog_dict.get(4, 0)) + \
                             1.00 * ad_prog_dict.get(4, 0) ) / ad_prog_dict.get(0, 0)
 
-                    #print "User: " + str(user)
+                    print "User: " + str(user)
                     #for j in xrange(5):
                     #    print '\t\t' + str(j) + ', ' + str(ad_prog_dict.get(j, 0))
 
                     initial_ts = \
-                        int(datetime.datetime.fromtimestamp(initial_ts - 6.5 * 60 * \
+                        int(datetime.datetime.fromtimestamp(initial_ts - 6 * 60 * \
                             60).strftime('%H')) + \
                         int(datetime.datetime.fromtimestamp(initial_ts).strftime('%M')) * 1.0 / 60
                     f = Feature(user.platform, avg_bitrate, switchoff, initial_ts,
                             time_len, ad_percentage)
-                    #print f
-
-
+                    print f
 
                     feature_output.write('%.1f,%.4f,%.1f,%d,%d,%.2f,%d\n' \
                             %(time_len, ad_percentage, avg_bitrate, switchoff, \
                             platform2ind[user.platform], initial_ts, len(bitrate_list)))
 
-                    if avg_bitrate >= 0 and ad_percentage >= 0:
-                        time_train_4.write('%.1f 1:%.1f 2:%d 3:%d 4:%.2f\n' %(time_len, avg_bitrate,
-                            switchoff, platform2ind[user.platform], initial_ts))
+                    time_train.write('%.1f 1:%.1f 2:%d 3:%d 4:%.2f' %(time_len, avg_bitrate,
+                        switchoff, platform2ind[user.platform], initial_ts))
 
-                        ad_train_4.write('%.2f 1:%.1f 2:%d 3:%d 4:%.2f\n' %(ad_percentage, avg_bitrate,
-                            switchoff, platform2ind[user.platform], initial_ts))
-
-                        time_train_3_plat.write('%.1f 1:%.1f 2:%d 3:%d\n' %(time_len, avg_bitrate,
-                            switchoff, platform2ind[user.platform]))
-
-                        ad_train_3_plat.write('%.2f 1:%.1f 2:%d 3:%d\n' %(ad_percentage, avg_bitrate,
-                            switchoff, platform2ind[user.platform]))
-
-                        time_train_3_init_ts.write('%.1f 1:%.1f 2:%d 3:%.2f\n' %(time_len, avg_bitrate,
-                            switchoff, initial_ts))
-
-                        ad_train_3_init_ts.write('%.2f 1:%.1f 2:%d 3:%.2f\n' %(ad_percentage, avg_bitrate,
-                            switchoff, initial_ts))
-
-                        time_train_2.write('%.1f 1:%.1f 2:%d\n' %(time_len, avg_bitrate, switchoff))
-
-                        ad_train_2.write('%.2f 1:%.1f 2:%d\n' %(ad_percentage, avg_bitrate, switchoff))
-
-                        fff.write('ad: %d, media: %d, master: %d' %(ad_num, media_num, master_num))
+                    ad_train.write('%.2f 1:%.1f 2:%d 3:%d 4:%.2f' %(ad_percentage, avg_bitrate,
+                        switchoff, platform2ind[user.platform], initial_ts))
 
                     bitrate_list[:] = []
                     switchoff = 0
@@ -236,18 +195,12 @@ class Statistician:
             #for j in xrange(5):
             #    print '\t\t' + str(j) + ', ' + str(ad_prog_dict.get(j, 0))
             #print '============================================================='
+            if True:
+                pass
 
         feature_output.close()
-        time_train_2.close()
-        ad_train_2.close()
-        time_train_3_plat.close()
-        ad_train_3_plat.close()
-        time_train_3_init_ts.close()
-        ad_train_3_init_ts.close()
-        time_train_4.close()
-        ad_train_4.close()
-
-        print "Ad num %d\nMedia num: %d\nMaster num: %d\n" %(ad_num, media_num, master_num)
+        time_train.close()
+        ad_train.close()
 
     def get_quality(self, url):
 
@@ -361,7 +314,8 @@ if __name__ == '__main__':
     else:
         st = cPickle.load(open(dict_file, 'rb'))
 
-    st.reduce()
+    print "Total user num is %d" %len(st.behavior)
+    #st.reduce()
 
     # Stats
     print 'Number of ads types is ' + str(len(st.stats['Ad']))

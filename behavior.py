@@ -77,7 +77,8 @@ class User():
         self.platform = platform
         self.app = app
     def __str__(self):
-        return self.IP + ", " + self.platform + ", " + self.app
+        return str(self.IP) + ", " + str(self.platform) + ", " + str(self.app)
+
     def __hash__(self):
         return hash((self.IP, self.platform, self.app))
     def __eq__(self, other):
@@ -93,6 +94,6 @@ class Feature():
         self.ad_percentage = ad_percentage
 
     def __str__(self):
-        return "%s, %d, %d, %d, %d, %.4f" %(self.device, self.bitrate, self.switchoff, self.st_time,
+        return "%s, %d kbps, %d times, at %.2f, %.1f secs, %.4f" %(self.device, self.bitrate, self.switchoff, self.st_time,
                 self.time_len, self.ad_percentage)
 

@@ -1,9 +1,11 @@
-\log
-\dump
+/log
+/dump
 
 *.log
 *.gz
 *.csv
+
+data/
 
 *.py[cod]
 

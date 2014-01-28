@@ -18,3 +18,6 @@ for i in xrange(len(l)):
             ll.append(', ')
 
 print ll
+
+f = open('./ml/data/test', 'w')
+f.write('fuck\n')
