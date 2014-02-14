@@ -43,14 +43,16 @@ class Cleaner:
             'AppleCoreMedia': 'AppleNative',
             'VisualOn': 'VisualOnThirdParty',
             'Xbox': 'XboxNative',
-            'youtube': 'YoutubeThirdParty'
+            'youtube': 'YoutubeThirdParty',
+            'Lavf': 'Lavf',
+            'FreeWheel': 'FreeWheel'
             }
 
         if self.with_prefix:
             pattern = '.+' + pattern
 
         if self.real_IP:
-            pattern += '\s(\d+.\d+.\d+.\d+)'
+            pattern += '\s(\d+.\d+.\d+.\d+|-)'
 
         if '.bz' in self.file:
             f = bz2.BZ2File(self.file, 'r')
@@ -62,10 +64,17 @@ class Cleaner:
         else:
             fout = open(self.output, 'w')
 
+        c = 0
         for line in f:
-            IP, date_time, request, platform, app, method = self.parse(line, pattern, ua_list, app_category)
-            fout.write(IP+', '+date_time+', '+request+', '+platform+', '+app+', '+method+'\n')
-            #print(IP+', '+date_time+', '+request+', '+platform+', '+app+', '+method+'\n')
+            c += 1
+            if not line.rstrip():
+                continue
+
+            IP, date_time, request, platform, app, method, HTTP_code = self.parse(line, pattern, ua_list, app_category)
+
+            if HTTP_code == "200" and not IP == '-':
+                fout.write(IP+', '+date_time+', '+request+', '+platform+', '+app+', '+method+'\n')
+                print(IP+', '+date_time+', '+request+', '+platform+', '+app+', '+method+'\n')
             if not self.is_infinite:
                 self.max_line -= 1
                 if self.max_line<=0:
@@ -104,7 +113,7 @@ class Cleaner:
             if date_time:
                 date_time=time.mktime(datetime.datetime.strptime(date_time, "%d/%b/%Y:%H:%M:%S").timetuple())
             request=mat[4]
-            # HTTP code = mat[5]
+            HTTP_code = mat[5]
             # Request size = mat[6]
             # Referrer = mat[7]
             IP = None
@@ -128,12 +137,12 @@ class Cleaner:
                     app_str = app_cat[app]
                     break
 
-            if not (find1 and find2):
+            if not (find1 or find2) and not _ua == '-':
                 print('Unindentified UA: ' + _ua + '\noriginal line is: ' + line)
 
             method=mat[2] # mat[3] is the same
 
-            return IP, str(date_time), request, str(ua_str), str(app_str), method
+            return IP, str(date_time), request, str(ua_str), str(app_str), method, HTTP_code
         else:
             raise NameError(line + ': Parsed error!')
 
