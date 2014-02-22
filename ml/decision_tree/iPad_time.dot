@@ -1,0 +1,35 @@
+digraph Tree {
+0 [label="X[1] <= 1.5000\nerror = 0.378725328407\nsamples = 24244\nvalue = [ 18092.   6152.]", shape="box"] ;
+1 [label="X[0] <= 1.5000\nerror = 0.472689476697\nsamples = 13752\nvalue = [ 8483.  5269.]", shape="box"] ;
+0 -> 1 ;
+2 [label="X[2] <= 1.5000\nerror = 0.496489197827\nsamples = 2888\nvalue = [ 1323.  1565.]", shape="box"] ;
+1 -> 2 ;
+3 [label="error = 0.4760\nsamples = 1603\nvalue = [ 626.  977.]", shape="box"] ;
+2 -> 3 ;
+4 [label="error = 0.4964\nsamples = 1285\nvalue = [ 697.  588.]", shape="box"] ;
+2 -> 4 ;
+5 [label="X[2] <= 1.5000\nerror = 0.44940146321\nsamples = 10864\nvalue = [ 7160.  3704.]", shape="box"] ;
+1 -> 5 ;
+6 [label="error = 0.4813\nsamples = 5646\nvalue = [ 3369.  2277.]", shape="box"] ;
+5 -> 6 ;
+7 [label="error = 0.3974\nsamples = 5218\nvalue = [ 3791.  1427.]", shape="box"] ;
+5 -> 7 ;
+8 [label="X[2] <= 1.5000\nerror = 0.154153123437\nsamples = 10492\nvalue = [ 9609.   883.]", shape="box"] ;
+0 -> 8 ;
+9 [label="X[0] <= 1.5000\nerror = 0.235633140308\nsamples = 4134\nvalue = [ 3570.   564.]", shape="box"] ;
+8 -> 9 ;
+10 [label="error = 0.2668\nsamples = 2138\nvalue = [ 1799.   339.]", shape="box"] ;
+9 -> 10 ;
+11 [label="error = 0.2000\nsamples = 1996\nvalue = [ 1771.   225.]", shape="box"] ;
+9 -> 11 ;
+12 [label="X[0] <= 1.5000\nerror = 0.0953113588199\nsamples = 6358\nvalue = [ 6039.   319.]", shape="box"] ;
+8 -> 12 ;
+13 [label="X[1] <= 2.5000\nerror = 0.0920628083678\nsamples = 3039\nvalue = [ 2892.   147.]", shape="box"] ;
+12 -> 13 ;
+14 [label="error = 0.0921\nsamples = 3038\nvalue = [ 2891.   147.]", shape="box"] ;
+13 -> 14 ;
+15 [label="error = 0.0000\nsamples = 1\nvalue = [ 1.  0.]", shape="box"] ;
+13 -> 15 ;
+16 [label="error = 0.0983\nsamples = 3319\nvalue = [ 3147.   172.]", shape="box"] ;
+12 -> 16 ;
+}

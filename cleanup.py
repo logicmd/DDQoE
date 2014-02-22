@@ -10,13 +10,15 @@
 import re, bz2, datetime, time
 
 class Cleaner:
-    def __init__(self, input=None, output=None, max_line=-1, with_prefix=True, real_IP=True):
+    def __init__(self, input=None, output=None, max_line=-1, with_prefix=True, real_IP=True,
+            continued = None):
         self.file=input
         self.with_prefix=with_prefix
         self.real_IP=real_IP
         self.is_infinite=(max_line<0)
         self.max_line=max_line
         self.output=output
+        self.continued=continued
 
 
 
@@ -65,16 +67,24 @@ class Cleaner:
             fout = open(self.output, 'w')
 
         c = 0
+        if self.continued:
+            f.seek(0)
+            f.seek(self.continued)
+            self.is_infinite = True
+
         for line in f:
             c += 1
             if not line.rstrip():
+                continue
+
+            if '\"\"' in line or '\"-\" \"-\"' in line or '\"-\" -' in line:
                 continue
 
             IP, date_time, request, platform, app, method, HTTP_code = self.parse(line, pattern, ua_list, app_category)
 
             if HTTP_code == "200" and not IP == '-':
                 fout.write(IP+', '+date_time+', '+request+', '+platform+', '+app+', '+method+'\n')
-                print(IP+', '+date_time+', '+request+', '+platform+', '+app+', '+method+'\n')
+                #print(IP+', '+date_time+', '+request+', '+platform+', '+app+', '+method+'\n')
             if not self.is_infinite:
                 self.max_line -= 1
                 if self.max_line<=0:

@@ -39,6 +39,8 @@ class Master(Behavior):
         self.is_master = True
     def __str__(self):
         return "master"
+    #def strme(self):
+    #    return self.__str__()
 
 class Ad(Behavior):
     '''ind2prog = {
@@ -63,6 +65,9 @@ class Ad(Behavior):
     def __str__(self):
         return str(self.ad_id) + ', ' + ind2prog.get(self.progress, 'unknown')
 
+    #def strme(self):
+    #    return self.__str__()
+
 class Media(Behavior):
     def __init__(self, bitrate = None):
         self.is_media = True
@@ -70,6 +75,9 @@ class Media(Behavior):
 
     def __str__(self):
         return str(self.bitrate) + 'kbps'
+
+    #def strme(self):
+    #    return self.__str__()
 
 class User():
     def __init__(self, IP = None, platform = None, app = None):
