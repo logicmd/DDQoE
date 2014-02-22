@@ -6,6 +6,7 @@
 *.csv
 
 data/
+*Copy*
 
 *.py[cod]
 
