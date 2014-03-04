@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import bz2, os, re, datetime, cPickle
+import urllib2, json, time
 
 from behavior import Master, Ad, Media, User, Feature
-
+from ipinfo import IPHelper
 '''
     stats.py refactor the processor logics
 '''
@@ -30,7 +31,6 @@ class Statistician:
         self.time_train_file = './ml/data/time_train'
         self.ad_train_file = './ml/data/ad_train'
 
-
     def gen_stats(self):
         if 'bz2' in self.file:
             f = bz2.BZ2File(self.file, 'r')
@@ -45,6 +45,8 @@ class Statistician:
 
 
     def organize(self, elements):
+        if len(elements) < 5:
+            return
         platform_stats = self.stats['Platform']
         platform = elements[3]
         platform_stats[platform] = platform_stats.get(platform, 0) + 1
@@ -57,7 +59,6 @@ class Statistician:
         progress = self.stats['Progress']
 
         req = elements[2]
-
 
         behave = None
 
@@ -95,9 +96,7 @@ class Statistician:
 
     def reduce(self, interval=300):
 
-        #print self.feature_file
-        #print self.ad_train_file
-        #print self.time_train_file
+        ip_helper = IPHelper()
 
         feature_output = open(self.feature_file, 'w')
         time_train_4 = open(self.time_train_file+'4', 'w')
@@ -202,8 +201,10 @@ class Statistician:
                                       ad_prog_dict.get(2, -1), ad_prog_dict.get(3, -1), \
                                       ad_prog_dict.get(4, -1))
 
+                    timezone_offset = ip_helper.get_time_zone(user.IP)
+                    #timezone_offset = -6
                     initial_ts = \
-                        int(datetime.datetime.fromtimestamp(initial_ts - 6.5 * 60 * \
+                        int(datetime.datetime.fromtimestamp(initial_ts + timezone_offset * 60 * \
                             60).strftime('%H')) + \
                         int(datetime.datetime.fromtimestamp(initial_ts).strftime('%M')) * 1.0 / 60
                     f = Feature(user.platform, avg_bitrate, switchoff, initial_ts,
@@ -240,6 +241,7 @@ class Statistician:
 
                         ad_train_2.write('%.2f 1:%.1f 2:%.2f\n' %(ad_percentage, avg_bitrate, switchoff))
 
+                        #ip_file.write('%s %d\n' %(user.IP, timezone_offset))
                         #summary.write('ad: %d, media: %d, master: %d\n' %(ad_num, media_num, master_num))
 
                     bitrate_list[:] = []
@@ -282,7 +284,7 @@ class Statistician:
                 bitrate = br #str(br) + 'kbps'
                 self.quality['content'][bitrate] = self.quality['content'].get(bitrate, 0) + 1
 
-        elif 'ads' in url and 'master' in url:
+        elif 'adhoc' in url or ('ads' in url and 'master' in url):
                 br = 'master'
                 self.quality['master'] = self.quality.get('master', 0) + 1
 
@@ -333,8 +335,6 @@ class Statistician:
 
         behavior = (time, behave)
         self.behavior[user].append(behavior)
-
-
 
 
 def print_sort(dic, k='k', seq='assending'):
