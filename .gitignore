@@ -6,6 +6,7 @@
 *.csv
 
 data/
+data2/
 *Copy*
 *.dot
 
