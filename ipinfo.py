@@ -8,7 +8,7 @@ import atexit
 
 ip_dict = {}
 dump_file = './dump/ip'
-
+ip_libs = ['./report/ip_with_time_zone', './report/ips.txt']
 def dump():
     with open(dump_file, 'w') as f:
         cPickle.dump(ip_dict, f, True)
@@ -22,15 +22,13 @@ class IPHelper:
 
     def load_plain(self):
         global ip_dict
-        with open('./report/ip_with_time_zone') as f:
-            for line in f:
-                l = line.split(' ')
-                ip_dict[l[0]] = int(l[1])
 
-        with open('./report/ips.txt') as f:
-            for line in f:
-                l = line.split(' ')
-                ip_dict[l[0]] = int(l[1])
+        for ip_lib in ip_libs:
+            with open(ip_lib) as f:
+                for line in f:
+                    l = line.split(' ')
+                    if len(l) == 2:
+                        ip_dict[l[0]] = int(l[1])
 
     def load(self):
         global ip_dict, dump_file
@@ -61,7 +59,7 @@ class IPHelper:
                 page = json.load(response)
                 time_zone = int(page["timeZone"][:3])
                 with open('./report/ips.txt', 'a') as ff:
-                    ff.write("%s %d" %(ip, time_zone))
+                    ff.write("%s %d\n" %(ip, time_zone))
                 ip_dict[ip] = time_zone
             except ValueError as e:
                 print "unable to resolve IP: %s, set to -6\n%s" %(ip, e)

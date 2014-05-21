@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import bz2, os, re, datetime, cPickle
+import urllib2, json, time
 
 from behavior import Master, Ad, Media, User, Feature
-
+from ipinfo import IPHelper
 '''
-    stats.py refactor the processor logics
+    profile each user behavior
 '''
 
 class Statistician:
@@ -26,9 +27,9 @@ class Statistician:
         }
 
         self.behavior = {}
-        self.feature_file = '/home/tangkai/DDQoE/dump/feature.csv'
-        self.time_train_file = '/home/tangkai/DDQoE/dump/time_train'
-        self.ad_train_file = '/home/tangkai/DDQoE/dump/ad_train'
+        self.feature_file = './ml/data_fine/feature.csv'
+        self.time_train_file = './ml/data_fine/time_train'
+        self.ad_train_file = './ml/data_fine/ad_train'
 
 
     def gen_stats(self):
@@ -45,6 +46,8 @@ class Statistician:
 
 
     def organize(self, elements):
+        if len(elements) < 5:
+            return
         platform_stats = self.stats['Platform']
         platform = elements[3]
         platform_stats[platform] = platform_stats.get(platform, 0) + 1
@@ -57,7 +60,6 @@ class Statistician:
         progress = self.stats['Progress']
 
         req = elements[2]
-
 
         behave = None
 
@@ -94,6 +96,14 @@ class Statistician:
         self.update_behavior( u, time, behave )
 
     def reduce(self, interval=300):
+
+        print 'Loaded user behavior dictionary, size = %d' %(len(self.behavior))
+        ip_helper = IPHelper()
+
+        self.feature_file = './ml/data_fine/feature.csv'
+        self.time_train_file = './ml/data_fine/time_train'
+        self.ad_train_file = './ml/data_fine/ad_train'
+
         feature_output = open(self.feature_file, 'w')
         time_train = open(self.time_train_file, 'w')
         ad_train = open(self.ad_train_file, 'w')
@@ -110,6 +120,10 @@ class Statistician:
             'None' :8,
         }
 
+        media_num = 0
+        ad_num = 0
+        master_num = 0
+
         for user, behavior_list in self.behavior.iteritems():
             previous_ts = 0
             initial_ts = 0
@@ -118,8 +132,6 @@ class Statistician:
             switchoff = 0
             time_len = 0
             ad_prog_dict = {}
-
-            media_num = 0
 
             for i in xrange(len(behavior_list)):
 
@@ -131,58 +143,92 @@ class Statistician:
                 if isinstance(behave, Ad):
                     prog = behave.progress
                     ad_prog_dict[prog] = ad_prog_dict.get(prog, 0) + 1
-                    print prog, ad_prog_dict[prog]
+                    #print prog, ad_prog_dict[prog]
+                    ad_num += 1
 
                 elif isinstance(behave, Media):
                     bitrate = behave.bitrate
                     if len(bitrate_list) > 0 and not bitrate == bitrate_list[-1]:
                         switchoff += 1
 
-                #elif isinstance(behave, Master)
-
                     bitrate_list.append(behave.bitrate)
+                    media_num += 1
 
-                if ts - previous_ts < 0 or i == len(behavior_list) - 1:
+                elif isinstance(behave, Master):
+                    master_num += 1
 
-                    bitrate = -1
+                duration = -1
+                if previous_ts != 0:
+                    duration = ts - previous_ts
+                previous_ts = ts
+
+                if duration > 90 or i == len(behavior_list) - 1:
+
+                    print "ts: %d, previous_ts: %d, duration: %d, is_last_behavior:%r" \
+                            %(ts, ts - duration, duration, i==len(behavior_list)-1)
+
+                    avg_bitrate = -1
                     if len(bitrate_list) > 0:
                         avg_bitrate = sum(bitrate_list) * 1.0 / len(bitrate_list)
                         time_len = behavior_list[i][0] - initial_ts
 
-                        media_num += len(bitrate_list)
 
-                    #iif(behave)
 
                     ad_percentage = -1.00
+                    wierd = False
                     if ad_prog_dict.get(0, 0) != 0:
-                        ad_percentage = (\
-                            0.00 * (ad_prog_dict.get(0, 0) - ad_prog_dict.get(1, 0)) + \
-                            0.25 * (ad_prog_dict.get(1, 0) - ad_prog_dict.get(2, 0)) + \
-                            0.50 * (ad_prog_dict.get(2, 0) - ad_prog_dict.get(3, 0)) + \
-                            0.75 * (ad_prog_dict.get(3, 0) - ad_prog_dict.get(4, 0)) + \
-                            1.00 * ad_prog_dict.get(4, 0) ) / ad_prog_dict.get(0, 0)
+                        ad_cal = {}
+                        for ad_prog in xrange(4):
+                            k = 0.25 * ad_prog
+                            ad_cal[k] = ad_prog_dict.get(ad_prog, 0) - ad_prog_dict.get(ad_prog + 1, 0)
+                            if ad_cal[k] <= -1:
+                                wierd = True
+                        ad_cal[1.00] = ad_prog_dict.get(4, 0)
+                        ad_percentage = 0.00
+                        for percentage, count in ad_cal.iteritems():
+                            ad_percentage += percentage * count;
+                        ad_percentage /= ad_prog_dict[0]
+                        #ad_percentage = (\
+                        #    0.00 * (ad_prog_dict.get(0, 0) - ad_prog_dict.get(1, 0)) + \
+                        #    0.25 * (ad_prog_dict.get(1, 0) - ad_prog_dict.get(2, 0)) + \
+                        #    0.50 * (ad_prog_dict.get(2, 0) - ad_prog_dict.get(3, 0)) + \
+                        #    0.75 * (ad_prog_dict.get(3, 0) - ad_prog_dict.get(4, 0)) + \
+                        #    1.00 * ad_prog_dict.get(4, 0) ) / ad_prog_dict.get(0, 0)
+                        if wierd or ad_percentage > 1 or ad_percentage < 0:
+                            print "******************wierd**********************"
+                            print "user: %s\n behavior:" %(user)
+                            for b_tuple in behavior_list:
+                                print '\t' + str(b_tuple[1])
+                            print "[0.00]: %d, [0.25]: %d, [0.50]: %d, [0.75]: %d, [1.00]:%d" \
+                                    %(ad_prog_dict.get(0, -1), ad_prog_dict.get(1, -1), \
+                                      ad_prog_dict.get(2, -1), ad_prog_dict.get(3, -1), \
+                                      ad_prog_dict.get(4, -1))
 
-                    print "User: " + str(user)
-                    #for j in xrange(5):
-                    #    print '\t\t' + str(j) + ', ' + str(ad_prog_dict.get(j, 0))
-
+                    timezone_offset = ip_helper.get_time_zone(user.IP)
                     initial_ts = \
-                        int(datetime.datetime.fromtimestamp(initial_ts - 6 * 60 * \
+                        int(datetime.datetime.fromtimestamp(initial_ts + timezone_offset * 60 * \
                             60).strftime('%H')) + \
                         int(datetime.datetime.fromtimestamp(initial_ts).strftime('%M')) * 1.0 / 60
-                    f = Feature(user.platform, avg_bitrate, switchoff, initial_ts,
-                            time_len, ad_percentage)
-                    print f
+                    #f = Feature(user.platform, avg_bitrate, switchoff, initial_ts,
+                    #       time_len, ad_percentage)
+                    #print f
 
                     feature_output.write('%.1f,%.4f,%.1f,%d,%d,%.2f,%d\n' \
                             %(time_len, ad_percentage, avg_bitrate, switchoff, \
                             platform2ind[user.platform], initial_ts, len(bitrate_list)))
 
-                    time_train.write('%.1f 1:%.1f 2:%d 3:%d 4:%.2f' %(time_len, avg_bitrate,
-                        switchoff, platform2ind[user.platform], initial_ts))
 
-                    ad_train.write('%.2f 1:%.1f 2:%d 3:%d 4:%.2f' %(ad_percentage, avg_bitrate,
-                        switchoff, platform2ind[user.platform], initial_ts))
+                    if not wierd and time_len > 0 and time_len < 86400 and \
+                            avg_bitrate >= 0 and \
+                            ad_percentage >= 0 and ad_percentage <= 1:
+
+                        switchoff = switchoff * 1.0 / ( time_len ) * 60.0
+
+                        time_train.write('%.1f 1:%.1f 2:%.2f 3:%d 4:%.2f\n' %(time_len, avg_bitrate,
+                            switchoff, platform2ind[user.platform], initial_ts))
+
+                        ad_train.write('%.2f 1:%.1f 2:%.2f 3:%d 4:%.2f\n' %(ad_percentage, avg_bitrate,
+                            switchoff, platform2ind[user.platform], initial_ts))
 
                     bitrate_list[:] = []
                     switchoff = 0
@@ -190,17 +236,14 @@ class Statistician:
 
                     initial_ts = ts
 
-                previous_ts = ts
-            #print '------------------------------------------------------------'
-            #for j in xrange(5):
-            #    print '\t\t' + str(j) + ', ' + str(ad_prog_dict.get(j, 0))
-            #print '============================================================='
-            if True:
-                pass
+
+
 
         feature_output.close()
         time_train.close()
         ad_train.close()
+
+        print "Ad num %d\nMedia num: %d\nMaster num: %d\n" %(ad_num, media_num, master_num)
 
     def get_quality(self, url):
 
@@ -222,7 +265,7 @@ class Statistician:
                 bitrate = br #str(br) + 'kbps'
                 self.quality['content'][bitrate] = self.quality['content'].get(bitrate, 0) + 1
 
-        elif 'ads' in url and 'master' in url:
+        elif 'adhoc' in url or ('ads' in url and 'master' in url):
                 br = 'master'
                 self.quality['master'] = self.quality.get('master', 0) + 1
 
@@ -303,19 +346,21 @@ if __name__ == '__main__':
     #    c = Cleaner('log/prod-freewheel.espn.go.com.full.log','./dump/cleaned_log.bz2')
     #    c.proceed()
 
+    print 'I\'m in'
+    force_refresh = False
 
     #st = Statistician('dump/cleaned_log.bz2')
     st = Statistician('/dev/shm/cleaned.log')
 
     dict_file = 'dump/behavior_dict'
-    if not os.path.exists(dict_file):
+    if force_refresh or not os.path.exists(dict_file):
         st.gen_stats()
-        cPickle.dump(st, open(dict_file, 'wb'), True)
+        cPickle.dump(st, open(dict_file, 'w'), True)
     else:
-        st = cPickle.load(open(dict_file, 'rb'))
+        print 'start loading dict'
+        st = cPickle.load(open(dict_file, 'r'))
 
-    print "Total user num is %d" %len(st.behavior)
-    #st.reduce()
+    st.reduce()
 
     # Stats
     print 'Number of ads types is ' + str(len(st.stats['Ad']))

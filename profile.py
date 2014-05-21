@@ -172,14 +172,14 @@ class Statistician:
 
 
                     ad_percentage = -1.00
-                    wired = False
+                    wierd = False
                     if ad_prog_dict.get(0, 0) != 0:
                         ad_cal = {}
                         for ad_prog in xrange(4):
                             k = 0.25 * ad_prog
                             ad_cal[k] = ad_prog_dict.get(ad_prog, 0) - ad_prog_dict.get(ad_prog + 1, 0)
                             if ad_cal[k] <= -1:
-                                wired = True
+                                wierd = True
                         ad_cal[1.00] = ad_prog_dict.get(4, 0)
                         ad_percentage = 0.00
                         for percentage, count in ad_cal.iteritems():
@@ -191,8 +191,8 @@ class Statistician:
                         #    0.50 * (ad_prog_dict.get(2, 0) - ad_prog_dict.get(3, 0)) + \
                         #    0.75 * (ad_prog_dict.get(3, 0) - ad_prog_dict.get(4, 0)) + \
                         #    1.00 * ad_prog_dict.get(4, 0) ) / ad_prog_dict.get(0, 0)
-                        if wired or ad_percentage > 1 or ad_percentage < 0:
-                            print "******************wired**********************"
+                        if wierd or ad_percentage > 1 or ad_percentage < 0:
+                            print "******************wierd**********************"
                             print "user: %s\n behavior:" %(user)
                             for b_tuple in behavior_list:
                                 print '\t' + str(b_tuple[1])
@@ -215,7 +215,7 @@ class Statistician:
                             %(time_len, ad_percentage, avg_bitrate, switchoff, \
                             platform2ind[user.platform], initial_ts, len(bitrate_list)))
 
-                    if time_len > 0 and avg_bitrate >= 0 and not wired \
+                    if time_len > 0 and avg_bitrate >= 0 and not wierd \
                             and ad_percentage >= 0 and ad_percentage <= 1:
 
                         switchoff = switchoff * 1.0 / ( time_len ) * 60.0
