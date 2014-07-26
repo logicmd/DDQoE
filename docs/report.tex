@@ -154,57 +154,67 @@ PSNR能够反映用户看到的视频和原始视频之间的相似程度，从PSNR中我们可以得到视频编码
 
 \begin{itemize}
     \item  第一类属于用户观看视频时的用户行为数据，如下所示：\\
-            \texttt{10.1.1.6 prod-freewheel.espn.go.com - [10/Nov/2013:04:02:43 +0000] \\
-            "GET /ad/g/1?\_dv=2\&nw=87146\&csid=watchespn:ios:phone:espn3\&caid=1590\\
+            \texttt{10.1.1.6 prod-freewheel.xxxx.xx.com - [10/Nov/2013:04:02:43 +0000] \\
+            "GET /ad/g/1?\_dv=2\&nw=87146\&csid=watchxxxx:ios:phone:xxx3\&caid=1590\\
             2488\&vdur=100\&vprn=846897\&pvrn=134525\&afid=49515690\&sfid=801283\&fla\\
-            g=+rema+slcb+aeti+exvt+sltp\&prof=87146:watchespn\_ios\_hls\&resp=m3u8;\\
+            g=+rema+slcb+aeti+exvt+sltp\&prof=87146:watchxxxx\_ios\_hls\&resp=m3u8;\\
             \_fw\_syncing\_token=4843856\&\_fw\_lpi=-170744411012240778,930000\textcolor{red}{\&\_fw\_lpu
-            \\=http\%3A\/\/espnlive-akc.bamnetworks.espn.go.com/ls04/espn/2013/11/10/\\
-            ESPN\_VIDEO\_5S\_M3U8\_1215795\_20131110/800K/800\_slide\_ads.m3u8} HTTP/1.1"\\
+            \\=http\%3A\/\/xxx.xxx.com/ls04/xxx/2013/11/10/\\
+            XXX\_VIDEO\_5S\_M3U8\_1215795\_20131110/800K/800\_slide\_ads.m3u8} HTTP/1.1"\\
              200 2013 "-" "\textcolor{red}{AppleCoreMedia/1.0.0.11B511 (iPhone; U; CPU OS 7\_0\_3 \\
-            like Mac OS X; en\_us)}"}
+            like Mac OS X; en\_us)}" \textcolor{red}{108.202.128.193}}
 
     \item  第二类属于客户端返回的用户观看广告的Pingback，用于记录用户观看广告的情况，如下所示：\\
-            \texttt{10.1.1.6 prod-freewheel.espn.go.com - [10/Nov/2013:04:02:39 +0000] \\
+            \texttt{10.1.1.6 prod-freewheel.xxxx.xx.com - [10/Nov/2013:04:02:39 +0000] \\
             "GET /ad/l/1?ct=6\&metr=7\&\textcolor{red}{cn=midPoint}\&et=i\&s=a005\&n=87146\%3B87146\%3B9\\
             4047\%3B147530\%3B376521\&t=1384056094432715014\&f=\&r=87146\&adid=2991384\\
             \&reid=2114302\&arid=0\&iw=\&uxnw=87146\&uxss=s241337\&uxct=16 HTTP/1.1" 2\\
             00 0 "-" "\textcolor{red}{Mozilla/5.0 (iPhone4,1; iOS 7.0.3) FreeWheelAdManager/5.5.x\\
-            -r9841-201305070735;com.espn.
-            WatchESPN WatchESPN/302}"}
+            -r9841-201305070735;com.xxx.
+            XXXX XXXX/302}" \textcolor{red}{75.175.76.253}}
 \end{itemize}
 
 %\texttt{174.254.64.64 user-identifier - [10/Nov/2013:04:02:39 +0000] "GET /re\\-quested?param=sth HTTP/1.0" 200 2326 "AppleCoreMedia/1.0.0.11B511 (iPhone; U; CPU OS 7\_0\_3 like Mac OS X; en\_us)"}
 
 从中可以看出数据由以下几个域构成：
 \begin{enumerate}
-    \item \textit{174.254.64.64} 是HTTP请求来源（HTTP客户端）的IP地址
-    \item \textit{user-identifier} 是HTTP客户端的身份标识符
-    \item \textit{[10/Nov/2013:04:02:39 +0000]} 是请求的时间戳，代表HTTP请求的日期、时间和时区。
-    \item \textit{GET /requested?param=sth HTTP/1.1} 是HTTP客户端发起请求的内容。
-        \begin{enumerate}
-            \item 表明了HTTP请求使用的方法，本例中是\textit{GET}方法。
-            \item 表明了HTTP请求的内容，本例中请求的内容是\textit{/requested?param=sth}
-            \item 表明了HTTP请求使用的协议，本例中使用的是HTTP 1.1版
-        \end{enumerate}
-    \item \textit{200} 是响应HTTP请求的状态代码，2xx代表成功地处理了该请求，3xx代表是一个重定向，4xx是客户端错误，5xx 是服务端错误
-    \item \textit{2326} 是请求的大小，单位是字节bytes。
-    \item \textit{AppleCoreMedia/1.0.0.11B511 (iPhone; U; CPU OS 7\_0\_3 like Mac OS X; en\_us)} 是客户端的UserAgent，用于标识客户端的类型，包括客户端的设备，操作系统，语言等信息。
+    \item \texttt{75.175.76.253} 是HTTP请求来源（HTTP客户端）的IP地址。
+    \item \texttt{[10/Nov/2013:04:02:39 +0000]} 是请求的时间戳，代表HTTP请求的日期、时间和时区。
+    \item \texttt{GET /requested?param=sth HTTP/1.1} 是HTTP客户端发起请求的内容。
+    \item \texttt{200} 是响应HTTP请求的状态代码。
+    \item \texttt{2326} 是请求的大小，单位是字节bytes。
+    \item \texttt{AppleCoreMedia/1.0.0.11B511 (iPhone; U; CPU OS 7\_0\_3 like Mac OS X; en\_us)} 是客户端的UserAgent，用于标识客户端的类型，包括客户端的设备，操作系统，语言等信息。
 \end{enumerate}
 
 其中HTTP请求的内容可以包括以下参数：
 \begin{enumerate}
-    \item 请求视频内容的码率
-    \item 请求广告的ID
-    \item 用户广告观看百分比的反馈，包括以下几个比例
-        \begin{enumerate}
-            \item firstQuartile 广告观看到25\%
-            \item midPoint 广告观看到50\%
-            \item thirdQuartile 广告观看到75\%
-            \item Complete 广告观看到100\%
-        \end{enumerate}
+    \item 以\texttt{/ad/g/1}开头的请求是对内容视频的m3u8下载的请求
+    \begin{itemize}
+        \item 通过\texttt{\_fw\_lpu}参数，我们可以得到请求内容视频的码率。
+    \end{itemize}
+    \item 以\texttt{/ad/l/1}开头的请求是对广告视频的观看pingback的反馈
+    \begin{itemize}
+        \item 通过\texttt{adid}参数，我们可以获得请求广告的ID
+        \item 通过\texttt{cn}参数，用户广告观看百分比的反馈，包括以下几个比例
+            \begin{enumerate}
+                \item firstQuartile 广告观看到25\%
+                \item midPoint 广告观看到50\%
+                \item thirdQuartile 广告观看到75\%
+                \item Complete 广告观看到100\%
+            \end{enumerate}
+    \end{itemize}
 \end{enumerate}
 有了对于数据集初步的认识，本文就能对数据集进行分析，并从中找到用于描述模型的特征和标签的指标。
+
+\subsection{数据处理}
+在上一节分析的基础上，我们理清了数据集的可用数据域。数据集是由42,983,194用户行为构成，每一条用户行为都包括用户的IP，Device或OS、请求的App Name、用户行为的时间戳、用户观看视频的码率和用户观看广告的比例。
+
+因而我们首先对数据集进行清洗，获得以上数据域。我们以HTTP请求的返回代码为200，用户UserAgent和请求非空作为条件，将满足条件的用户行为的以上数据域清洗出来，此时25G的数据缩减到19G。
+
+在清洗完数据后，我们需要对数据进行聚合，将相同用户的行为按照时间序排序。要确定unique user，我们拿用户的IP和Device Name构成tuple作为用户的ID，构建一个词典。词典的key是用户的ID，value是一个list里面列了该用户按照时间序排序的所有行为，每个行为包括以下三个数据域：1.用户行为的时间 2.用户行为的类型：是广告反馈还是观看内容视频。 3.用户观看广告的比例或者永固观看内容视频的码率。
+
+在对所有4200万用户行为进行聚合后，我们获得19万7千个独立用户，其中既看过视频又看过广告的用户约为5万5千个。对于这5.5万名用户，我们拿到他们第一次请求的时间作为他们开始观看的时间；通过计算第一个请求和最后一个请求的时间差获得他们观看的时长；通过计算码率切换的次数，获得单位时间内码率切换的速率；通过计算每个单次广告观看中最大比率的平均值获得该用户观看广告的平均比例。我们统计这5个重要指标的CDF，如下文所示。
+
 \subsubsection{开始观看时间}
 \begin{figure}[htbp]
     \centering
@@ -263,7 +273,7 @@ PSNR能够反映用户看到的视频和原始视频之间的相似程度，从PSNR中我们可以得到视频编码
 本文画出按全体用户码率切换次数的CDF图和按设备分类的各个类别用户码率切换次数的CDF图，分别如图\ref{fig:switch_all}和图\ref{fig:switch_various}所示。
 这些图说明，iPad和iPhone用户的码率切换和全部用户的总体趋势一致。相比iOS用户，Android用户的码率切换次数更多一些，这也许是由于Android用户的无线网络更加不稳定一些，不足以支撑高码率的视频导致码率切换频繁；也有可能是Android 客户端实现的码率适应算法不同，由于内存和CPU运算能力的不同，Android客户端可能缓存的视频时长更少，从而更容易发送码率切换。而Apple TV 的码率切换次数最少，这样从侧面反映客厅用户的网络最为稳定的。
 
-\subsection{观看时长}
+\subsubsection{观看时长}
 \begin{figure}[htbp]
     \centering
     \includegraphics[scale=0.7]{figures/all_time.eps}
@@ -282,7 +292,7 @@ PSNR能够反映用户看到的视频和原始视频之间的相似程度，从PSNR中我们可以得到视频编码
 本文画出全体用户观看时长的CDF图和按设备分类的各个类别用户观看时长的CDF 图，如图\ref{fig:time_all}和 \ref{fig:time_various}所示。
 上图说明，iPad、iPhone、Apple TV和Android用户观看时长和总体趋势基本一致，iPhone用户观看时间最少，Apple TV观看时长最长。
 
-\subsection{广告比例}
+\subsubsection{广告比例}
 \begin{figure}[htbp]
     \centering
     \includegraphics[scale=0.7]{figures/all_ad.eps}
@@ -700,6 +710,29 @@ InfoGain = \frac{H(y) - H(y|f)}{H(y)}
 
 我还将分离数据集后的准确率按照每种设备的比例做了加权平均，如在图\ref{fig:predict_time_dt}中，如图中蓝色线条所示。该图显示，从总体上看，外部因素在预测用户观看时长时没有提升效果。但是在分离数据集后，iPhone、iPad的准确率高于总体准确率。因此本文建议，在预测用户观看时长时，当用户为Android和Apple TV用户时，将不使用外部因素训练出的模型作为其QoE模型；对于iPad和iPhone用户，用iPad和iPhone用户单独分离出数据集训练出的独立模型作为其QoE模型。
 
+图\ref{fig:dt_time_iphone}、图\ref{fig:dt_time_ipad}、图\ref{fig:dt_time_all}给出了在2分类的情况下，我们使用到的预测观看时间决策树的可视化。对于5分类以上的决策树，其可视化图示过于复杂，分支过多也不便于辨认，我们通常使用内存中已经训练好的决策树直接用于预测。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[scale=0.35]{dt/iPhone_time.eps}
+    \caption{iPhone设备上对于观看时长预测的决策树}
+    \label{fig:dt_time_iphone}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[scale=0.35]{dt/iPad_time.eps}
+    \caption{iPad设备上对于观看时长预测的决策树}
+    \label{fig:dt_time_ipad}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[scale=0.35]{dt/All_time.eps}
+    \caption{不使用设备因素获得的用于预测观看时长的决策树}
+    \label{fig:dt_time_all}
+\end{figure}
+
 
 
 \subsubsection{预测广告观看比例的多分类结果}
@@ -772,9 +805,35 @@ InfoGain = \frac{H(y) - H(y|f)}{H(y)}
 
 我还将分离数据集后的准确率按照每种设备的比例做了加权平均，如在图\ref{fig:predict_ad_dt}中，如图中蓝色线条所示。该图显示，从总体上看，外部因素在预测用户广告比例时有提升效果。但是在分离数据集后，Apple TV、iPhone、iPad的准确率高于总体准确率。因此本文建议，在预测用户观看时长时，当用户为Android用户时，将使用整个数据集且将外部因素作为一维特征训练出的模型作为其QoE模型；对于iOS用户，用iPad 、iPhone、Apple TV 用户单独分离出数据集训练出的独立模型作为其QoE模型。
 
+图\ref{fig:dt_ad_iphone}、图\ref{fig:dt_ad_ipad}、图\ref{fig:dt_ad_all}给出了在2分类的情况下，我们使用到的预测广告比例的决策树的可视化图示。对于5分类以上的决策树，其可视化图示过于复杂，分支过多也不便于辨认，我们通常使用内存中已经训练好的决策树直接用于预测。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[scale=0.35]{dt/iPhone_ad.eps}
+    \caption{iPhone设备上对于广告比例预测的决策树}
+    \label{fig:dt_ad_iphone}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[scale=0.35]{dt/iPad_ad.eps}
+    \caption{iPad设备上对于广告比例预测的决策树}
+    \label{fig:dt_ad_ipad}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[scale=0.2]{dt/AllWithFeature_ad.eps}
+    \caption{将设备因素作为额外一维特征训练到的用于预测广告比例的决策树（请放大）}
+    \label{fig:dt_ad_all}
+\end{figure}
 
 
-\section{小结}
+可以看到，图\ref{fig:dt_ad_all}看起来是图\ref{fig:dt_ad_iphone}和图\ref{fig:dt_ad_ipad}分别在device=iPhone和device=iPad分支上拼接而来的，即在2分类情况下，依据外部因素分离数据集和将外部因素作为额外以为特征获得的总的决策树是完全相同的。事实上，这是一个正常现象。根据决策树的训练过程，系统总会将熵增益更大的特征放在更顶层的位置。而在相似数据分布的情况下，拥有更多分类的特征的熵增益比其他特征的熵增益更加大。在2分类的情况下，设备分类是分为4类的，因而设备分类有最高的熵增益，处于决策树最高层，相当于分离数据集的多个子决策树的拼合。
+
+经过验证，当分类数大于5时，最高熵增益的特征就不再是设备信息，此时依据外部因素分离数据集训练获得的子决策树的聚合和将外部因素作为额外以为特征获得的决策树就不再相同。
+
+\section{总结}
 
 
 
@@ -789,6 +848,8 @@ InfoGain = \frac{H(y) - H(y|f)}{H(y)}
 实验结果表明，决策树能够更好地刻画QoE模型，因为作为输入特征的质量因素和外部因素不是正交的，
 它们之间存在一定的依赖关系。
 实验结果中还表明，当设备类型为iOS类用户时，本文倾向于分割用户后单独训练模型来预测用户的QoE。当设备类型为非iOS类用户时，本文倾向于使用整个数据集同时将外部因素作为一维特征来预测用户的QoE。
+
+
 
 
 \bibliographystyle{plain}
